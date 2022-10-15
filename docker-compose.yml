@@ -22,7 +22,7 @@ services:
     expose:
       - "3000"
     ports:
-      - "3000:3000"
+      - "30478:3000"
     environment:
       - PORT=3000
       - JWT_SECRET=keyboardcat
@@ -39,6 +39,6 @@ services:
     expose:
       - "8080"
     ports:
-      - "8080"
+      - "20478:8080"
 volumes:
   db-data:
