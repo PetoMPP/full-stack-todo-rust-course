@@ -2,12 +2,14 @@ use crate::{
     api::auth::auth_service::AuthService,
     components::{
         atoms::{button::Button, text_input::TextInput},
-        stores::{auth_store::AuthStore, error_store::ErrorStore}, organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
+        organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
+        stores::error_store::ErrorStore,
     },
     router::Route,
-    styles::{color::Color, styles::Styles}, SessionStore,
+    styles::{color::Color, styles::Styles},
+    SessionStore,
 };
-use gloo::timers::callback::Timeout;
+use gloo::{console::log, timers::callback::Timeout};
 use lazy_static::__Deref;
 use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
@@ -16,25 +18,25 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
+use super::auth_data::AuthData;
+
 #[function_component(CreateAccount)]
 pub fn create_account() -> Html {
-    let (store, dispatch) = use_store::<AuthStore>();
+    let auth_data = use_mut_ref(|| AuthData::default());
 
-    let onchange = dispatch
-        .clone()
-        .reduce_mut_callback_with(|store, event: Event| {
+    let onchange = {
+        let auth_data = auth_data.clone();
+        Callback::from(move |event: Event| {
+            let auth_data = auth_data.clone();
             let target_element = event.target_unchecked_into::<HtmlInputElement>();
             match target_element.id().as_str() {
-                "username" => store.username = target_element.value(),
-                "password" => store.password = target_element.value(),
+                "username" => auth_data.borrow_mut().username = target_element.value(),
+                "password" => auth_data.borrow_mut().password = target_element.value(),
                 _ => (),
-            }
-        });
-
-    let dispatch = dispatch.clone();
-    use_effect(move || {
-        move || dispatch.reduce(|_| {AuthStore::default()})
-    });
+            };
+            log!(format!("{:?}", auth_data.borrow()));
+        })
+    };
 
     let (error_store, error_dispatch) = use_store::<ErrorStore>();
 
@@ -45,13 +47,16 @@ pub fn create_account() -> Html {
         let error_dispatch = error_dispatch.clone();
         Callback::from(move |event: FocusEvent| {
             event.prevent_default();
+            let auth_data = auth_data.clone();
             let error_dispatch = error_dispatch.clone();
             let session_dispatch = session_dispatch.clone();
-            let store = store.clone();
             let history = history.clone();
             spawn_local(async move {
-                let response =
-                    AuthService::register(store.username.clone(), store.password.clone()).await;
+                let response = AuthService::register(
+                    auth_data.borrow().username.clone(),
+                    auth_data.borrow().password.clone(),
+                )
+                .await;
                 match response {
                     Ok(auth) => {
                         session_dispatch.clone().reduce(|store| {
@@ -66,17 +71,15 @@ pub fn create_account() -> Html {
                         {
                             let error_dispatch = error_dispatch.clone();
                             Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                error_dispatch
-                                    .clone()
-                                    .reduce(|store| {
-                                        if store.uuid == error_uuid {
-                                            ErrorStore::new(String::new(), false, error_uuid).into()
-                                        }
-                                        else {
-                                            store
-                                        }
-                                    })
-                            }).forget();
+                                error_dispatch.clone().reduce(|store| {
+                                    if store.uuid == error_uuid {
+                                        ErrorStore::new(String::new(), false, error_uuid).into()
+                                    } else {
+                                        store
+                                    }
+                                })
+                            })
+                            .forget();
                         }
                         error_dispatch
                             .clone()
