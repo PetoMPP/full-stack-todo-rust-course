@@ -84,7 +84,7 @@ describe("todo app", () => {
           "I am a task, you can complete me by checking the box"
         )
         .dget("completed")
-        .should("contain", "X")
+        .should("contain", "T")
         .dget("priority")
         .should("contain", "A")
         .dget("description")
@@ -130,7 +130,7 @@ describe("todo app", () => {
         .dget("priority")
         .should("contain", "B")
         .dget("completed")
-        .should("contain", "✓")
+        .should("contain", "T")
         .dget("edit")
         .click()
         .dget("completed")
@@ -142,7 +142,7 @@ describe("todo app", () => {
         .first()
         .click()
         .dget("completed")
-        .should("contain", "X");
+        .should("contain", "T");
     });
 
     it("should be deletable", () => {
@@ -185,6 +185,7 @@ describe("todo app", () => {
       const priority = "B";
 
       cy.createTask({ title, description, priority })
+        .wait(1000)
         .dget("tasklink")
         .last()
         .should("contain", title)
@@ -254,6 +255,7 @@ describe("todo app", () => {
     });
     it("should allow the user to sort the tasks", () => {
       cy.createTask({ priority: "A", title: "ZZZZZZZZZZZZZZ" })
+        .wait(1000)
         .dget("priority")
         .eq(1)
         .should("contain", "B")
@@ -263,14 +265,14 @@ describe("todo app", () => {
         .eq(1)
         .should("contain", "A")
         .dget("sort")
-        .select("Name")
+        .select("Title")
         .dget("tasklink")
         .eq(2)
         .should("contain", "ZZZZZZZZZZZZZZ")
         .dget("sort")
         .select("priority")
         .dget("sort")
-        .select("Created Order")
+        .select("Creation time")
         .dget("tasklink")
         .eq(1)
         .should("contain", "See my details for by clicking me");
@@ -281,7 +283,7 @@ describe("todo app", () => {
         .first()
         .click({ force: true })
         .dget("filter")
-        .select("Completed")
+        .select("Completed tasks")
         .dget("tasklink")
         .should("have.length", 1)
         .dget("tasklink")
@@ -290,7 +292,7 @@ describe("todo app", () => {
           "I am a task, you can complete me by checking the box"
         )
         .dget("filter")
-        .select("Uncompleted")
+        .select("Incompleted tasks")
         .dget("tasklink")
         .should("have.length", 1)
         .dget("tasklink")
