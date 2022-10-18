@@ -3,7 +3,7 @@ use stylist::yew::styled_component;
 use yew::prelude::*;
 use yewdux::prelude::use_store;
 
-use crate::SessionStore;
+use crate::{SessionStore, TaskStore};
 use crate::components::atoms::route_link::RouteLink;
 use crate::router::Route;
 use crate::styles::color::Color;
@@ -18,14 +18,24 @@ pub struct NavbarProperties {
 
 #[styled_component(Navbar)]
 pub fn navbar(props: &NavbarProperties) -> Html {
-    let (store, dispatch) = use_store::<SessionStore>();
+    let (_, task_dispatch) = use_store::<TaskStore>();
+    let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (style, div_style) = Styles::get_navbar_styles(props.fore_color.clone(), props.back_color.clone());
 
-    let logout = dispatch.reduce_callback(|store| {
-        let mut store = store.deref().clone();
-        store.user = None;
-        store
-    });
+    let logout = {
+        let session_dispatch = session_dispatch.clone();
+        let task_dispatch = task_dispatch.clone();
+        Callback::from(move |_: MouseEvent| {
+            task_dispatch.reduce(|_| {
+                TaskStore::default()
+            });
+            session_dispatch.reduce(|session_store| {
+                let mut session_store = session_store.deref().clone();
+                session_store.user = None;
+                session_store
+            });
+        })
+    };
 
     html! {
         <section class={style}>
@@ -37,7 +47,7 @@ pub fn navbar(props: &NavbarProperties) -> Html {
                     fore_color={props.fore_color.clone()}
                     back_color={props.back_color.clone()}/>
             </div>
-            if let None = store.user {
+            if let None = session_store.user {
                 <div class={div_style}>
                     <RouteLink
                         text={"Login"}

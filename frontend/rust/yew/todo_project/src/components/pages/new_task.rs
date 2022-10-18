@@ -15,14 +15,8 @@ use crate::{
         dropdown::Dropdown, checkbox::Checkbox
     }, pages::task_details::{get_priority_options, get_selected_value}},
     styles::{color::Color, styles::Styles},
-    SessionStore, router::Route,
+    SessionStore, router::Route, TaskStore,
 };
-
-#[derive(Store, PartialEq, Clone, Default, Debug)]
-pub struct TaskStore {
-    pub task: Task
-}
-
 
 #[styled_component(NewTask)]
 pub fn new_task() -> Html {
@@ -35,38 +29,41 @@ pub fn new_task() -> Html {
         Callback::from(move |_| history.push(Route::Home))
     };
     
-    let (session_store, session_dispatch) = use_store::<SessionStore>();
+    let (session_store, _) = use_store::<SessionStore>();
+    let (_, task_dispatch) = use_store::<TaskStore>();
 
-    let (task_store, task_dispatch) = use_store::<TaskStore>();
+    let task_data = use_mut_ref(|| Task::default());
 
-    let onchange = task_dispatch.reduce_callback_with(|store, event: Event| {
-        let target_element = event.target_unchecked_into::<HtmlInputElement>();
-        let value = target_element.value();
-        let mut store = store.deref().clone();
-        match target_element.id().as_str() {
-            "title" => store.task.title = value.clone(),
-            "priority" => store.task.priority = match value.parse() {
-                    Ok(priority) => Some(priority),
-                    Err(_) => None
-                },
-            "description" => store.task.description = 
-                if value == "" {
-                    None
-                }
-                else {
-                    Some(value.clone())
-                },
-            "completed" => store.task.completed_at = 
-                if store.task.completed() {
-                    None
-                }
-                else {
-                    Some(Local::now().to_string())
-                },
-            _ => (),
-        };
-        store
-    });
+    let task_dispatch = task_dispatch.clone();
+    let onchange = {
+        let task_data = task_data.clone();
+        Callback::from(move |event: Event| {
+            let target_element = event.target_unchecked_into::<HtmlInputElement>();
+            let value = target_element.value();
+            match target_element.id().as_str() {
+                "title" => task_data.borrow_mut().title = value.clone(),
+                "priority" => task_data.borrow_mut().priority = match value.parse() {
+                        Ok(priority) => Some(priority),
+                        Err(_) => None
+                    },
+                "description" => task_data.borrow_mut().description = 
+                    if value == "" {
+                        None
+                    }
+                    else {
+                        Some(value.clone())
+                    },
+                "completed" => task_data.borrow_mut().completed_at = 
+                    if task_data.borrow_mut().completed() {
+                        None
+                    }
+                    else {
+                        Some(Local::now().to_string())
+                    },
+                _ => (),
+            };
+        })
+    };
     
     let create_task = 
     {
@@ -75,14 +72,15 @@ pub fn new_task() -> Html {
             Some(user) => Some(user.token.clone()),
             None => None
         };
-        let task = task_store.task.clone();
+        let task_data = task_data.clone();
 
-        let session_dispatch = session_dispatch.clone();
+        let task_dispatch = task_dispatch.clone();
         Callback::from(move |_: MouseEvent| {
             let history = history.clone();
-            let session_dispatch = session_dispatch.clone();
+            let task_dispatch = task_dispatch.clone();
             let token = token.clone();
-            let task = task.clone();
+            let task: Task = task_data.deref().clone().into();
+            log!(format!("{:?}", task));
 
             if let None = token {
                 return;
@@ -93,7 +91,7 @@ pub fn new_task() -> Html {
                 match response {
                     Ok(_) => {
                         history.push(Route::Home);
-                        session_dispatch.reduce(|store| {
+                        task_dispatch.reduce(|store| {
                             let mut store = store.deref().clone();
                             store.tasks_valid = false;
                             store
@@ -111,7 +109,7 @@ pub fn new_task() -> Html {
             <TextInput data_test={"title"} id={"title"} label={"Title"} onchange={onchange.clone()}/>
             <Dropdown data_test={"priority"} id={"priority"} label={"Priority"} options={get_priority_options()} selected_option={get_selected_value(None)} onchange={onchange.clone()}/>
             <TextInput data_test={"description"} id={"description"} label={"Description"} control_type={ControlType::Textarea} rows={3} onchange={onchange.clone()}/>
-            <Checkbox data_test={"completed"} id={"completed"} label={"Completed?"} checked={task_store.task.completed()} onchange={onchange.clone()}/>
+            <Checkbox data_test={"completed"} id={"completed"} label={"Completed?"} checked={task_data.borrow().completed()} onchange={onchange.clone()}/>
             <div class={button_style}>
                 <Button
                     label={"Cancel"}

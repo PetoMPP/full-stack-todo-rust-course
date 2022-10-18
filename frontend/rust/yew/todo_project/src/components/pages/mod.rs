@@ -4,3 +4,4 @@ pub mod login;
 pub mod task_details;
 pub mod new_task;
 pub mod auth_data;
+pub mod error_data;

@@ -1,11 +1,11 @@
-use std::{fmt::Display, str::FromStr};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use std::{cell::RefCell, fmt::Display, str::FromStr};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, PartialOrd)]
 pub enum Priority {
     A,
     B,
-    C
+    C,
 }
 
 impl FromStr for Priority {
@@ -16,7 +16,7 @@ impl FromStr for Priority {
             "A" => Ok(Self::A),
             "B" => Ok(Self::B),
             "C" => Ok(Self::C),
-            _ => Err(())
+            _ => Err(()),
         }
     }
 }
@@ -33,7 +33,7 @@ pub struct Task {
     pub title: String,
     pub priority: Option<Priority>,
     pub description: Option<String>,
-    pub completed_at: Option<String>
+    pub completed_at: Option<String>,
 }
 
 impl Task {
@@ -42,3 +42,15 @@ impl Task {
     }
 }
 
+impl From<RefCell<Task>> for Task {
+    fn from(ref_cell: RefCell<Task>) -> Self {
+        let ref_cell = ref_cell.borrow();
+        Self {
+            id: ref_cell.id,
+            title: ref_cell.title.clone(),
+            priority: ref_cell.priority.clone(),
+            description: ref_cell.description.clone(),
+            completed_at: ref_cell.completed_at.clone(),
+        }
+    }
+}

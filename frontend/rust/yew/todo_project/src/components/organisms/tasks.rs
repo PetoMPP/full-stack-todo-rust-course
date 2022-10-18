@@ -18,7 +18,7 @@ use crate::{
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore,
+    SessionStore, TaskStore,
 };
 
 #[derive(Clone, Copy)]
@@ -40,22 +40,23 @@ enum SortMode {
 
 #[function_component(Tasks)]
 pub fn tasks() -> Html {
-    let (session_store, session_dispatch) = use_store::<SessionStore>();
+    let (session_store, _) = use_store::<SessionStore>();
+    let (task_store, task_dispatch) = use_store::<TaskStore>();
 
     let token = match session_store.user.clone() {
         Some(user) => Some(user.token),
         None => None,
     };
 
-    {
-        let session_store = session_store.clone();
-        let session_dispatch = session_dispatch.clone();
-        update_tasks_in_store(session_store, session_dispatch);
+    if let Some(token) = token.clone() {
+        let task_store = task_store.clone();
+        let task_dispatch = task_dispatch.clone();
+        update_tasks_in_store(token, task_store, task_dispatch);
     }
 
     let mut tasks: Vec<Task> = Vec::new();
 
-    if let Some(new_tasks) = session_store.deref().clone().tasks {
+    if let Some(new_tasks) = task_store.deref().clone().tasks {
         tasks = new_tasks;
     }
 
@@ -69,9 +70,9 @@ pub fn tasks() -> Html {
     let output = tasks.iter().map(|task| {
         let token = token.clone();
         let task = task.clone();
-        let session_dispatch = session_dispatch.clone();
-        let remove_onclick = delete_task_callback(task.clone(), session_dispatch.clone(), token.clone().unwrap(), || {});
-        let toggle_completed = toggle_completed_callback(task.clone(), session_dispatch.clone(), token.clone().unwrap());
+        let task_dispatch = task_dispatch.clone();
+        let remove_onclick = delete_task_callback(task.clone(), task_dispatch.clone(), token.clone().unwrap(), || {});
+        let toggle_completed = toggle_completed_callback(task.clone(), task_dispatch.clone(), token.clone().unwrap());
         html! {
             <tr>
                 <td data-test={"priority"}>
@@ -301,7 +302,7 @@ fn get_filter_options() -> Vec<DropdownOption> {
 
 fn toggle_completed_callback(
     task: Task,
-    session_dispatch: Dispatch<SessionStore>,
+    session_dispatch: Dispatch<TaskStore>,
     token: String,
 ) -> Callback<MouseEvent> {
     let mut task = task.clone();
@@ -332,37 +333,23 @@ fn toggle_completed_callback(
 }
 
 pub fn update_tasks_in_store(
-    session_store: Rc<SessionStore>,
-    session_dispatch: Dispatch<SessionStore>,
-) -> () {
-    {
-        let session_store = session_store.clone();
-        let token = match session_store.user.clone() {
-            Some(user) => Some(user.token.clone()),
-            None => None,
-        };
-        let session_dispatch = session_dispatch.clone();
-        use_effect(move || {
-            if !session_store.clone().tasks_valid {
-                let session_dispatch = session_dispatch.clone();
-                if let Some(token) = token {
-                    let session_dispatch = session_dispatch.clone();
-                    spawn_local(async move {
-                        let response = TasksService::get_tasks(token).await;
-                        if let Ok(tasks) = response {
-                            session_dispatch.reduce(|store| {
-                                let mut store = store.deref().clone();
-                                store.tasks = Some(tasks);
-                                store.tasks_valid = true;
-                                store
-                            });
-                        }
-                    });
-                }
-            }
-
-            move || {
-                drop(session_store);
+    token: String,
+    task_store: Rc<TaskStore>,
+    task_dispatch: Dispatch<TaskStore>,
+) {
+    let task_store = task_store.clone();
+    let task_dispatch = task_dispatch.clone();
+    if !task_store.clone().tasks_valid {
+        let task_dispatch = task_dispatch.clone();
+        spawn_local(async move {
+            let response = TasksService::get_tasks(token).await;
+            if let Ok(tasks) = response {
+                task_dispatch.reduce(|store| {
+                    let mut store = store.deref().clone();
+                    store.tasks = Some(tasks);
+                    store.tasks_valid = true;
+                    store
+                });
             }
         });
     }
@@ -370,7 +357,7 @@ pub fn update_tasks_in_store(
 
 pub fn delete_task_callback<F>(
     task: Task,
-    dispatch: Dispatch<SessionStore>,
+    dispatch: Dispatch<TaskStore>,
     token: String,
     action: F,
 ) -> Callback<MouseEvent>

@@ -2,12 +2,11 @@ use crate::{
     api::auth::auth_service::AuthService,
     components::{
         atoms::{button::Button, text_input::TextInput},
-        organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
-        stores::error_store::ErrorStore,
+        organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS}
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore,
+    SessionStore, TaskStore,
 };
 use gloo::{console::log, timers::callback::Timeout};
 use lazy_static::__Deref;
@@ -18,7 +17,7 @@ use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
 
-use super::auth_data::AuthData;
+use super::{auth_data::AuthData, error_data::ErrorData};
 
 #[function_component(CreateAccount)]
 pub fn create_account() -> Html {
@@ -38,18 +37,20 @@ pub fn create_account() -> Html {
         })
     };
 
-    let (error_store, error_dispatch) = use_store::<ErrorStore>();
+    let error_data = use_state(|| ErrorData::default());
 
     let (_, session_dispatch) = use_store::<SessionStore>();
+    let (_, task_dispatch) = use_store::<TaskStore>();
     let history = use_history().unwrap();
 
     let onsubmit = {
-        let error_dispatch = error_dispatch.clone();
+        let error_data = error_data.clone();
         Callback::from(move |event: FocusEvent| {
             event.prevent_default();
             let auth_data = auth_data.clone();
-            let error_dispatch = error_dispatch.clone();
+            let error_data = error_data.clone();
             let session_dispatch = session_dispatch.clone();
+            let task_dispatch = task_dispatch.clone();
             let history = history.clone();
             spawn_local(async move {
                 let response = AuthService::register(
@@ -64,30 +65,25 @@ pub fn create_account() -> Html {
                             store.user = Some(auth);
                             store
                         });
+                        task_dispatch.reduce(|_| {
+                            TaskStore::default()
+                        });
                         history.push(Route::Home)
                     }
                     Err(error) => {
                         let error_uuid = Uuid::new_v4();
                         {
-                            let error_dispatch = error_dispatch.clone();
+                            let error_data = error_data.clone();
                             Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                error_dispatch.clone().reduce(|store| {
-                                    if store.uuid == error_uuid {
-                                        ErrorStore::new(String::new(), false, error_uuid).into()
-                                    } else {
-                                        store
-                                    }
-                                })
+                                if error_data.uuid == error_uuid {
+                                    error_data.set(ErrorData::default());
+                                }
                             })
                             .forget();
                         }
-                        error_dispatch
-                            .clone()
-                            .reduce(|_| ErrorStore::new(String::new(), false, error_uuid));
+                        error_data.set(ErrorData::default());
 
-                        error_dispatch
-                            .clone()
-                            .reduce(|_| ErrorStore::new(error, true, error_uuid));
+                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
                     }
                 }
             });
@@ -98,8 +94,8 @@ pub fn create_account() -> Html {
 
     html! {
         <>
-        if error_store.display {
-            <ErrorMessage message={error_store.message.clone()}/>
+        if error_data.display {
+            <ErrorMessage message={error_data.message.clone()}/>
         }
         <form class={style} {onsubmit}>
             <h2 class={Color::Info.into_style("color")}>{"Create account"}</h2>

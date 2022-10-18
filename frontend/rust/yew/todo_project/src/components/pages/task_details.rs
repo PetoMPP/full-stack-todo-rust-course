@@ -6,7 +6,7 @@ use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
-use yewdux::{prelude::use_store, store::Store};
+use yewdux::prelude::use_store;
 
 use crate::{
     api::tasks::{
@@ -28,7 +28,7 @@ use crate::{
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore,
+    SessionStore, TaskStore,
 };
 
 #[derive(Properties, PartialEq)]
@@ -36,60 +36,57 @@ pub struct TaskDetailsProperties {
     pub task_id: i32,
 }
 
-#[derive(Store, PartialEq, Clone, Default, Debug)]
-pub struct TaskStore {
-    pub task: Task,
-}
-
 #[function_component(TaskDetails)]
 pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let (style, button_style) = Styles::get_editable_details_style();
     
-    let (session_store, session_dispatch) = use_store::<SessionStore>();
-
+    let (session_store, _) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
 
-    let onchange = task_dispatch.reduce_callback_with(|store, event: Event| {
-        let target_element = event.target_unchecked_into::<HtmlInputElement>();
-        let value = target_element.value();
-        let mut store = store.deref().clone();
-        match target_element.id().as_str() {
-            "title" => store.task.title = value.clone(),
-            "priority" => {
-                store.task.priority = match value.parse() {
-                    Ok(priority) => Some(priority),
-                    Err(_) => None,
-                }
-            }
-            "description" => {
-                store.task.description = if value == "" {
-                    None
-                } else {
-                    Some(value.clone())
-                }
-            }
-            "completed" => {
-                store.task.completed_at = if store.task.completed() {
-                    None
-                } else {
-                    Some(Local::now().to_string())
-                }
-            }
-            _ => (),
-        };
-        store
-    });
+    let task_data = use_mut_ref(|| Task::default());
+
+    let onchange = {
+        let task_data = task_data.clone();
+        Callback::from(move |event: Event| {
+            let target_element = event.target_unchecked_into::<HtmlInputElement>();
+            let value = target_element.value();
+            match target_element.id().as_str() {
+                "title" => task_data.borrow_mut().title = value.clone(),
+                "priority" => task_data.borrow_mut().priority = match value.parse() {
+                        Ok(priority) => Some(priority),
+                        Err(_) => None
+                    },
+                "description" => task_data.borrow_mut().description = 
+                    if value == "" {
+                        None
+                    }
+                    else {
+                        Some(value.clone())
+                    },
+                "completed" => task_data.borrow_mut().completed_at = 
+                    if task_data.borrow_mut().completed() {
+                        None
+                    }
+                    else {
+                        Some(Local::now().to_string())
+                    },
+                _ => (),
+            };
+        })
+    };
 
     {
-        let session_store = session_store.clone();
-        let session_dispatch = session_dispatch.clone();
-        update_tasks_in_store(session_store, session_dispatch);
+        let task_store = task_store.clone();
+        let task_dispatch = task_dispatch.clone();
+        if let Some(user) = session_store.user.clone() {
+            update_tasks_in_store(user.token, task_store, task_dispatch);
+        }
     }
 
     let edit_state = use_state(|| false);
     let task = match *edit_state {
-        true => Some(task_store.task.clone()),
-        false => get_task_by_id(props.task_id, session_store.clone()),
+        true => Some(task_data.deref().clone().into()),
+        false => get_task_by_id(props.task_id, task_store.clone()),
     };
 
     if let None = task {
@@ -101,15 +98,20 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let task = task.unwrap();
 
     let toggle_edit = {
+        let task_store = task_store.clone();
+        let task_id = props.clone().task_id;
         let edit_state = edit_state.clone();
-        let task_dispatch = task_dispatch.clone();
-        let task = task.clone();
-        task_dispatch.reduce_callback(move |store| {
+        let task_data = task_data.clone();
+        Callback::from(move |_: MouseEvent| {
+            let task = get_task_by_id(task_id.clone(), task_store.clone()).unwrap();
+            let task_data = task_data.clone();
+            task_data.borrow_mut().id = task.id.clone();
+            task_data.borrow_mut().title = task.title.clone();
+            task_data.borrow_mut().priority = task.priority.clone();
+            task_data.borrow_mut().description = task.description.clone();
+            task_data.borrow_mut().completed_at = task.completed_at.clone();
             let edit_state = edit_state.clone();
             edit_state.set(!*edit_state);
-            let mut store = store.deref().clone();
-            store.task = task.clone();
-            store
         })
     };
 
@@ -118,21 +120,21 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let save_changes = {
         let history = history.clone();
         let edit_state = edit_state.clone();
-        let mut task = task_store.task.clone();
-        let session_task = get_task_by_id(task.id, session_store.clone()).unwrap_or_default();
+        let task_data = task_data.clone();
+        let session_task = get_task_by_id(task_data.borrow().id, task_store.clone()).unwrap_or_default();
         let token = session_store.user.clone().unwrap().token;
 
-        if task.completed() && session_task.completed() {
-            task.completed_at = session_task.completed_at.clone();
+        if task_data.borrow().completed() && session_task.completed() {
+            task_data.borrow_mut().completed_at = session_task.completed_at.clone();
         }
 
-        let session_dispatch = session_dispatch.clone();
+        let task_dispatch = task_dispatch.clone();
         Callback::from(move |_: MouseEvent| {
             let history = history.clone();
             let edit_state = edit_state.clone();
-            let session_dispatch = session_dispatch.clone();
+            let task_dispatch = task_dispatch.clone();
             let token = token.clone();
-            let task = task.clone();
+            let task: Task = task_data.deref().clone().into();
             spawn_local(async move {
                 let response = TasksService::update_task(token.clone(), task.clone()).await;
                 match response {
@@ -140,7 +142,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                         history.push(Route::TaskDetails {
                             id: task.id.clone(),
                         });
-                        session_dispatch.reduce(|store| {
+                        task_dispatch.reduce(|store| {
                             edit_state.set(false);
                             let mut store = store.deref().clone();
                             store.tasks_valid = false;
@@ -159,22 +161,22 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         Callback::from(move |_| history.push(Route::Home))
     };
 
-    let session_dispatch = session_dispatch.clone();
+    let task_dispatch = task_dispatch.clone();
     let session_store = session_store.clone();
     let delete_task = {
         let task = task.clone();
         let history = history.clone();
-        let session_dispatch = session_dispatch.clone();
+        let task_dispatch = task_dispatch.clone();
         let session_store = session_store.clone();
         delete_task_callback(
             task.clone(),
-            session_dispatch.clone(),
+            task_dispatch.clone(),
             session_store.user.clone().unwrap().token.clone(),
             move || history.push(Route::Home),
         )
     };
 
-    let session_title = get_task_by_id(props.task_id, session_store.clone())
+    let session_title = get_task_by_id(props.task_id, task_store.clone())
         .unwrap_or_default()
         .title;
 
@@ -228,7 +230,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     }
 }
 
-fn get_task_by_id(id: i32, store: Rc<SessionStore>) -> Option<Task> {
+fn get_task_by_id(id: i32, store: Rc<TaskStore>) -> Option<Task> {
     let tasks = store.tasks.clone();
     if let None = tasks {
         return None;
