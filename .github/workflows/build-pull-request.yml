@@ -51,3 +51,11 @@ jobs:
     - name: Run Yew tests
       run: cargo test
       working-directory: ${{ env.Yew-dir }}
+
+    - name: Install trunk
+      run: cargo install trunk --locked
+      working-directory: ${{ env.Yew-dir }}
+
+    - name: Build trunk
+      run: trunk build
+      working-directory: ${{ env.Yew-dir }}
