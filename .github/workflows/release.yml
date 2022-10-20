@@ -1,0 +1,31 @@
+name: 'Release'
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+  
+env:
+  pull-and-compose: |
+    cd ~/source/repos/${{ github.event.repository.name }}
+    git reset --hard
+    git pull
+    docker compose --profile nodejs-express down
+    docker compose --profile nodejs-express up --force-recreate
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+    - name: Connect to mikr.us ssh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        port: ${{ secrets.SSH_PORT }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: ${{ env.pull-and-compose }}
+
