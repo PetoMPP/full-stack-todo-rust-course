@@ -28,4 +28,5 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: ${{ env.pull-and-compose }}
+        script-stop: true
 
