@@ -1,0 +1,64 @@
+name: 'Build pull request'
+
+on:
+  pull_request:
+
+env:
+  Node-dir: ${{ github.workspace }}/backend/nodejs/express
+  Yew-dir: ${{ github.workspace }}/frontend/rust/yew
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+      with:
+        fetch-depth: 0
+
+    # Build backend
+    # Node.js
+    - name: Install Node.js 14.x
+      uses: actions/setup-node@v3
+      with:
+        node-version: 14.x
+
+    - name: Install Node.js dependencies
+      run: npm ci
+      working-directory: ${{ env.Node-dir }}
+
+    - name: Build Node.js
+      run: npm run build --if-present
+      working-directory: ${{ env.Node-dir }}
+
+    - name: Run Node.js tests
+      run: npm run test --if-present
+      working-directory: ${{ env.Node-dir }}
+
+    # Build frontend
+    # Yew.rs
+    - name: Install stable Cargo toolchain
+      uses: actions-rs/toolchain@v1.0.6
+      with: 
+        toolchain: stable
+
+    - name: Build Yew
+      run: cargo build
+      working-directory: ${{ env.Yew-dir }}
+
+    - name: Run Yew tests
+      run: cargo test
+      working-directory: ${{ env.Yew-dir }}
+
+    - name: Install wasm target
+      run: rustup target add wasm32-unknown-unknown
+
+    - name: Install trunk
+      run: cargo install trunk --locked
+      working-directory: ${{ env.Yew-dir }}
+
+    - name: Build trunk
+      run: trunk build
+      working-directory: ${{ env.Yew-dir }}
