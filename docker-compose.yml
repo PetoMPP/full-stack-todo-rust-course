@@ -31,9 +31,9 @@ services:
   rust-yew:
     profiles:
       - nodejs-express
-    build: ./frontend/rust/yew/todo_project
+    build: ./frontend/rust/yew
     volumes:
-      - ./frontend/rust/yew/todo_project:/code/
+      - ./frontend/rust/yew:/code/
     depends_on:
       - nodejs-express
     expose:
