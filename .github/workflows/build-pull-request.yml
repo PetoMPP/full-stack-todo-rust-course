@@ -52,6 +52,9 @@ jobs:
       run: cargo test
       working-directory: ${{ env.Yew-dir }}
 
+    - name: Install wasm target
+      run: cargo target add wasm32-unknown-unknown
+
     - name: Install trunk
       run: cargo install trunk --locked
       working-directory: ${{ env.Yew-dir }}
