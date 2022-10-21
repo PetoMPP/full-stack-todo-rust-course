@@ -12,7 +12,7 @@ env:
     git reset --hard
     git pull
     docker compose --profile nodejs-express down
-    docker compose --profile nodejs-express up --force-recreate
+    docker compose --profile nodejs-express up --wait --force-recreate
 
 jobs:
   build:
