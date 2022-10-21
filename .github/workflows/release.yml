@@ -28,3 +28,4 @@ jobs:
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
         script: ${{ env.pull-and-compose }}
+        command_timeout: 30m
