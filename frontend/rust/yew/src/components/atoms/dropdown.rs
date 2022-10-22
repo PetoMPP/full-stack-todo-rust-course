@@ -29,7 +29,6 @@ pub fn dropdown(props: &DropdownProperties) -> Html {
         border: 1px solid transparent;
         border-top: none;
         border-bottom: 1px solid #DDD;
-        box-shadow: inset 0 1px 2px rgba({secondary},.39), 0 -1px 1px {secondary}, 0 1px 0 {secondary};
     "#,
         secondary = Color::Secondary.get_css_color(),
         info = Color::Info.get_css_color()
