@@ -23,29 +23,33 @@ label, p, a {
 }
 
 h1 {
-    font-size: 72px;
+    font-size: max(6vw, 3em, 3rem);
 }
 
 h2 {
-    font-size: 64px;
+    font-size: max(5vw, 2.5em, 2.5rem);
 }
 
 h3 {
-    font-size: 58px;
+    font-size: max(4vw, 2em, 2rem);
 }
 
 h4 {
-    font-size: 46px;
+    font-size: max(3.5vw, 1.75em, 1.75rem);
 }
 
 h5 {
-    font-size: 38px;
+    font-size: max(3vw, 1.5em, 1.5rem);
 }
 
-h6, label {
-    font-size: 34px;
+h6 {
+    font-size: max(2.5vw, 1.25em, 1.25rem);
 }
 
-p, input, a, textarea, select, option {
-    font-size: 28px;
+p, input, a, textarea, select, option, label, th, td, button {
+    font-size: max(2vw, 1em, 1rem);
+}
+
+tr {
+    word-break: break-word;
 }
