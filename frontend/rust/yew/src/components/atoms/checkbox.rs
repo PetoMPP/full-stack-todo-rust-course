@@ -37,8 +37,8 @@ pub fn checkbox(props: &CheckboxProperties) -> Html {
         r#"
         accent-color: {color};
         background-color: {back_color};
-        height: 32px;
-        width: 32px;
+        height: max(2vw, 1em, 1rem);
+        width: max(2vw, 1em, 1rem);
         "#,
         color = Color::Highlight.get_css_color(),
         back_color = Color::Secondary.get_css_color()

@@ -21,12 +21,13 @@ pub fn button(props: &ButtonProperties) -> Html {
 
     let style_string = format!(
         r#"
+        margin-top: 10px;
         color: {color};
         background-color: {background_color};
         border-radius: 12px;
         text-align: center;
         border: 1px solid transparent;
-        padding: 10px;
+        padding: 1vw;
         cursor: pointer;
         :hover {{
             background-color: {hover_color};
