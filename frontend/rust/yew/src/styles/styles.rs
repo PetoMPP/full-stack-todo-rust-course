@@ -12,7 +12,7 @@ impl Styles {
             margin: auto;
             display: flex;
             flex-direction: column;
-            width: 850px;
+            width: 80vw;
     
             h2 {
                 margin-bottom: 20px;
@@ -20,7 +20,7 @@ impl Styles {
     
             div {
                 margin: auto;
-                width: 80%;
+                width: 100%;
                 margin-bottom: 10px;
             }
             "#
@@ -31,13 +31,6 @@ impl Styles {
             r#"
             display: flex;
             justify-content: space-between;
-            margin-left: 10%;
-            margin-right: 10%;
-    
-            button {
-                width: 20%;
-                font-size: 24px;
-            }
             "#
         )
         .unwrap();
@@ -50,11 +43,6 @@ impl Styles {
         let style = Style::new(format!(
             r#"
             margin-top: 20px;
-            font-size: 24px;
-    
-            a {{
-                font-size: 24px;
-            }}
 
             th {{
                 color: {secondary};
@@ -98,15 +86,6 @@ impl Styles {
             r#"
             display: flex;
             justify-content: space-between;
-
-            div {
-                margin-right: 5%;
-            }
-    
-            button {
-                margin-left: auto;
-                font-size: 24px;
-            }
             "#).unwrap();
 
         (style, div_style)
@@ -125,7 +104,7 @@ impl Styles {
     
         let mut style_string = format!(
             r#"
-            padding: 0 0 0 15px;
+            margin: 1vw;
             text-decoration: none;
             color: {};
             :hover {{
@@ -149,7 +128,7 @@ impl Styles {
             margin: auto;
             display: flex;
             flex-direction: column;
-            width: 850px;
+            width: 80vw;
             h2 {
                 margin-bottom: 20px;
             }
@@ -165,15 +144,12 @@ impl Styles {
             margin: auto;
             display: flex;
             flex-direction: column;
-            width: 650px;
+            width: min(80vw, 850px);
             div {
                 padding: 10px;
             }
             button {
-                width: 40%;
-                min-width: 150px;
                 margin: auto;
-                font-size: 24px;
             }
             "#
         )
@@ -189,7 +165,6 @@ impl Styles {
 
     let mut style_string = format!(
         r#"
-        padding: 15px 25px;
         border-bottom: 1px solid {fore_color};
         color: {fore_color};
         display: flex;
@@ -207,7 +182,7 @@ impl Styles {
 
     let div_style_string = format!(
         r#"
-            padding: 0 15px;
+            padding: 2vw;
         "#
     );
 

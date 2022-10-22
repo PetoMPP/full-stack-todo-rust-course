@@ -90,7 +90,7 @@ pub fn tasks() -> Html {
                     <RouteLink data_test={"tasklink"} link={Route::TaskDetails { id: task.id }} text={task.title.clone()} fore_color={Color::CustomStr("black".to_string())} />
                 </td>
                 <td>
-                    <RouteLink data_test={"delete"} link={Route::Home} onclick={remove_onclick} text={"Remove"} fore_color={Color::Error} />
+                    <RouteLink data_test={"delete"} link={Route::Home} onclick={remove_onclick} text={"❌"} fore_color={Color::Error} />
                 </td>
             </tr>
         }
@@ -131,15 +131,15 @@ pub fn tasks() -> Html {
         history.push(Route::NewTask);
     });
 
-    let (style, div_style) = Styles::get_table_style();
-
+    let (style, dropdown_style) = Styles::get_table_style();
+    
     html! {
         <>
-            <div class={div_style}>
+            <div class={dropdown_style}>
                 <Dropdown label={"Filter"} options={get_filter_options()} data_test={"filter"} selected_option={get_filter_selected_option()} onchange={apply_filter}/>
                 <Dropdown label={"Sort"} options={get_sort_options()} data_test={"sort"} selected_option={get_sort_selected_option()} onchange={apply_sort}/>
-                <Button label={"+ add new task"} onclick={new_task} data_test={"add-task"}/>
             </div>
+            <Button label={"+ add new task"} onclick={new_task} data_test={"add-task"}/>
             <div class={style}>
                 <table>
                 <col style="width:10%" />
