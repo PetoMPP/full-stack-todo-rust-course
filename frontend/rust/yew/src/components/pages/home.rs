@@ -22,14 +22,17 @@ pub fn home() -> Html {
             <ErrorMessage message={error_data.message.clone()}/>
         }
         <div class={style}>
-        <h2>{"Your TODO list"}</h2>
         if let Some(user) = store.user.clone() {
-            <p data-test={"welcome"}>{format!("Welcome, {name}!", name = user.username)}</p>
-            <p>{"Here you can add, delete and modify your tasks!"}</p>
+            <div>
+                <h4 data-test={"welcome"}>{format!("Welcome, {name}!", name = user.username)}</h4>
+                <p>{"Here you can add, delete and modify your tasks!"}</p>
+            </div>
             <Tasks error_data={Some(error_data)} />
         }
         else {
-            <p>{"Here you could add, delete and modify your tasks, if you were logged in.."}</p>
+            <div>
+                <p>{"Here you could add, delete and modify your tasks, if you were logged in.."}</p>
+            </div>
         }
         </div>
         </>
