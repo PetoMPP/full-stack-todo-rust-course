@@ -55,10 +55,7 @@ jobs:
     - name: Install wasm target
       run: rustup target add wasm32-unknown-unknown
 
-    - name: Install trunk
-      run: cargo install trunk --locked
-      working-directory: ${{ env.Yew-dir }}
-
-    - name: Build trunk
-      run: trunk build
-      working-directory: ${{ env.Yew-dir }}
+    - name: Truck check
+      uses: trunk-io/trunk-action@v1
+      with:
+        check-mode: all
