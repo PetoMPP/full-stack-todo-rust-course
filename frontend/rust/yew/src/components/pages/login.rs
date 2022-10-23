@@ -8,7 +8,7 @@ use crate::{
     styles::{color::Color, styles::Styles},
     SessionStore, TaskStore,
 };
-use gloo::{console::log, timers::callback::Timeout};
+use gloo::timers::callback::Timeout;
 use lazy_static::__Deref;
 use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
@@ -33,7 +33,6 @@ pub fn create_account() -> Html {
                 "password" => auth_data.borrow_mut().password = target_element.value(),
                 _ => (),
             };
-            log!(format!("{:?}", auth_data.borrow()));
         })
     };
 

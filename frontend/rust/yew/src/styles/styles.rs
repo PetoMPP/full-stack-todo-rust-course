@@ -13,15 +13,9 @@ impl Styles {
             display: flex;
             flex-direction: column;
             width: 80vw;
-    
-            h2 {
-                margin-bottom: 20px;
-            }
-    
+
             div {
-                margin: auto;
-                width: 100%;
-                margin-bottom: 10px;
+                margin: 0.5em 0;
             }
             "#
         )
@@ -29,8 +23,10 @@ impl Styles {
     
         let button_style = style!(
             r#"
+            margin-top: 2vw;
             display: flex;
             justify-content: space-between;
+            flex-wrap: wrap;
             "#
         )
         .unwrap();
@@ -42,13 +38,13 @@ impl Styles {
     pub fn get_table_style() -> (Style, Style) {
         let style = Style::new(format!(
             r#"
-            margin-top: 20px;
+            margin-top: 1em;
 
             th {{
                 color: {secondary};
                 background-color: {info};
                 font-weight: bold;
-                border-bottom: 15px solid;
+                border-bottom: 0.75em solid;
                 border-color: {secondary};
             }}
     
@@ -61,13 +57,13 @@ impl Styles {
             tr {{
                 color: black;
                 background-color: {primary};
-                border-bottom: 3px solid;
-                border-top: 3px solid;
+                border-bottom: 0.25em solid;
+                border-top: 0.25em solid;
                 border-color: {secondary};
             }}
     
             th, td {{
-                padding: 5px;
+                padding: 0.5em;
                 text-align: center;
                 vertical-align: middle;
             }}
@@ -86,6 +82,8 @@ impl Styles {
             r#"
             display: flex;
             justify-content: space-between;
+            margin: auto;
+            flex-flow: wrap-reverse;
             "#).unwrap();
 
         (style, div_style)
@@ -104,7 +102,7 @@ impl Styles {
     
         let mut style_string = format!(
             r#"
-            margin: 1vw;
+            margin: 1em;
             text-decoration: none;
             color: {};
             :hover {{
@@ -124,13 +122,13 @@ impl Styles {
     pub fn get_home_style() -> Style {
         style!(
             r#"
-            padding: 10px;
+            padding: 1em;
             margin: auto;
             display: flex;
             flex-direction: column;
             width: 80vw;
-            h2 {
-                margin-bottom: 20px;
+            div {
+                margin: 1em 0;
             }
             "#
         )

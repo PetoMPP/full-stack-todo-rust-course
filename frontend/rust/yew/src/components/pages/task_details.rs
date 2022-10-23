@@ -1,7 +1,8 @@
 use std::rc::Rc;
 use chrono::Local;
-use gloo::console::log;
+use gloo::timers::callback::Timeout;
 use lazy_static::__Deref;
+use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -22,7 +23,7 @@ use crate::{
             text_input::{ControlType, TextInput},
         },
         organisms::{
-            error_message::ErrorMessage,
+            error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
             tasks::{delete_task_callback, update_tasks_in_store},
         },
     },
@@ -30,6 +31,8 @@ use crate::{
     styles::{color::Color, styles::Styles},
     SessionStore, TaskStore,
 };
+
+use super::error_data::ErrorData;
 
 #[derive(Properties, PartialEq)]
 pub struct TaskDetailsProperties {
@@ -40,6 +43,8 @@ pub struct TaskDetailsProperties {
 pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let (style, button_style) = Styles::get_editable_details_style();
     
+    let error_data = use_state(|| ErrorData::default());
+
     let (session_store, _) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
 
@@ -79,7 +84,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         let task_store = task_store.clone();
         let task_dispatch = task_dispatch.clone();
         if let Some(user) = session_store.user.clone() {
-            update_tasks_in_store(user.token, task_store, task_dispatch);
+            update_tasks_in_store(user.token, task_store, task_dispatch, Some(error_data.clone()));
         }
     }
 
@@ -118,6 +123,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let history = use_history().unwrap();
 
     let save_changes = {
+        let error_data = error_data.clone();
         let history = history.clone();
         let edit_state = edit_state.clone();
         let task_data = task_data.clone();
@@ -130,6 +136,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
 
         let task_dispatch = task_dispatch.clone();
         Callback::from(move |_: MouseEvent| {
+            let error_data = error_data.clone();
             let history = history.clone();
             let edit_state = edit_state.clone();
             let task_dispatch = task_dispatch.clone();
@@ -149,7 +156,21 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                             store
                         })
                     }
-                    Err(error) => log!(format!("task deletion failed, details: {}", error)),
+                    Err(error) => {
+                        let error_uuid = Uuid::new_v4();
+                        {
+                            let error_data = error_data.clone();
+                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
+                                if error_data.uuid == error_uuid {
+                                    error_data.set(ErrorData::default());
+                                }
+                            })
+                            .forget();
+                        }
+                        error_data.set(ErrorData::default());
+
+                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
+                    }
                 }
             })
         })
@@ -173,6 +194,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
             task_dispatch.clone(),
             session_store.user.clone().unwrap().token.clone(),
             move || history.push(Route::Home),
+            Some(error_data.clone())
         )
     };
 
@@ -181,6 +203,10 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         .title;
 
     html! {
+        <>
+        if error_data.display {
+            <ErrorMessage message={error_data.message.clone()}/>
+        }
         <div class={style}>
             <h3>{session_title.clone()}</h3>
             <p>{"Here you can view and edit task details."}</p>
@@ -227,6 +253,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                 </div>
             }
         </div>
+        </>
     }
 }
 

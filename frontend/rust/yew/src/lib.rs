@@ -34,7 +34,9 @@ pub fn app() -> Html {
         <Global css={MAIN_STYLESHEET}/>
         <BrowserRouter>
             <Navbar />
-            <Switch<Route> render={Switch::render(switch)}/>
+            <div style={"overflow-y: auto;"}>
+                <Switch<Route> render={Switch::render(switch)}/>
+            </div>
         </BrowserRouter>
         </>
     }
