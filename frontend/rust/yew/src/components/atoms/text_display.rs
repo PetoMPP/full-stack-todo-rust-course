@@ -24,7 +24,6 @@ pub fn text_input(props: &TextDisplayProperties) -> Html {
 
     let label_style = format!(
         r#"
-        margin-bottom: 10px;
         color: {};
     "#,
         Color::Primary.get_css_color()
