@@ -1,22 +1,32 @@
+use crate::{
+    api::tasks::{task::Task, tasks_service::TasksService},
+    components::{
+        atoms::{
+            button::Button,
+            checkbox::Checkbox,
+            dropdown::Dropdown,
+            text_input::{ControlType, TextInput},
+        },
+        organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
+        pages::{
+            error_data::ErrorData,
+            task_details::{get_priority_options, get_selected_value},
+        },
+    },
+    router::Route,
+    styles::{color::Color, styles::Styles},
+    SessionStore, TaskStore,
+};
 use chrono::Local;
-use gloo::console::log;
+use gloo::timers::callback::Timeout;
 use lazy_static::__Deref;
 use stylist::yew::styled_component;
+use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
 use yew_router::prelude::*;
 use yewdux::prelude::*;
-use crate::{
-    api::tasks::{task::Task, tasks_service::TasksService},
-    components::{atoms::{
-        button::Button,
-        text_input::{ControlType, TextInput},
-        dropdown::Dropdown, checkbox::Checkbox
-    }, pages::task_details::{get_priority_options, get_selected_value}},
-    styles::{color::Color, styles::Styles},
-    SessionStore, router::Route, TaskStore,
-};
 
 #[styled_component(NewTask)]
 pub fn new_task() -> Html {
@@ -28,7 +38,9 @@ pub fn new_task() -> Html {
         let history = history.clone();
         Callback::from(move |_| history.push(Route::Home))
     };
-    
+
+    let error_data = use_state(|| ErrorData::default());
+
     let (session_store, _) = use_store::<SessionStore>();
     let (_, task_dispatch) = use_store::<TaskStore>();
 
@@ -42,35 +54,37 @@ pub fn new_task() -> Html {
             let value = target_element.value();
             match target_element.id().as_str() {
                 "title" => task_data.borrow_mut().title = value.clone(),
-                "priority" => task_data.borrow_mut().priority = match value.parse() {
+                "priority" => {
+                    task_data.borrow_mut().priority = match value.parse() {
                         Ok(priority) => Some(priority),
-                        Err(_) => None
-                    },
-                "description" => task_data.borrow_mut().description = 
-                    if value == "" {
-                        None
+                        Err(_) => None,
                     }
-                    else {
+                }
+                "description" => {
+                    task_data.borrow_mut().description = if value == "" {
+                        None
+                    } else {
                         Some(value.clone())
-                    },
-                "completed" => task_data.borrow_mut().completed_at = 
-                    if task_data.borrow_mut().completed() {
-                        None
                     }
-                    else {
+                }
+                "completed" => {
+                    task_data.borrow_mut().completed_at = if task_data.borrow_mut().completed() {
+                        None
+                    } else {
                         Some(Local::now().to_string())
-                    },
+                    }
+                }
                 _ => (),
             };
         })
     };
-    
-    let create_task = 
-    {
+
+    let create_task = {
+        let error_data = error_data.clone();
         let history = history.clone();
         let token = match session_store.user.clone() {
             Some(user) => Some(user.token.clone()),
-            None => None
+            None => None,
         };
         let task_data = task_data.clone();
 
@@ -80,14 +94,15 @@ pub fn new_task() -> Html {
             let task_dispatch = task_dispatch.clone();
             let token = token.clone();
             let task: Task = task_data.deref().clone().into();
-            log!(format!("{:?}", task));
+            let error_data = error_data.clone();
 
             if let None = token {
                 return;
             }
 
             spawn_local(async move {
-                let response = TasksService::create_task(token.clone().unwrap(), task.clone()).await;
+                let response =
+                    TasksService::create_task(token.clone().unwrap(), task.clone()).await;
                 match response {
                     Ok(_) => {
                         history.push(Route::Home);
@@ -96,14 +111,36 @@ pub fn new_task() -> Html {
                             store.tasks_valid = false;
                             store
                         })
-                    },
-                    Err(error) => log!(format!("task creation failed, details: {}", error)),
+                    }
+                    Err(error) => {
+                        let error_uuid = Uuid::new_v4();
+                        {
+                            let error_data = error_data.clone();
+                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
+                                if error_data.uuid == error_uuid {
+                                    error_data.set(ErrorData::default());
+                                }
+                            })
+                            .forget();
+                        }
+                        error_data.set(ErrorData::default());
+
+                        error_data.set(ErrorData {
+                            message: error,
+                            display: true,
+                            uuid: error_uuid,
+                        });
+                    }
                 }
             })
         })
     };
 
-    html!{
+    html! {
+        <>
+        if error_data.display {
+            <ErrorMessage message={error_data.message.clone()}/>
+        }
         <div class={style}>
             <h3>{"Create new task!"}</h3>
             <TextInput data_test={"title"} id={"title"} label={"Title"} onchange={onchange.clone()}/>
@@ -121,5 +158,6 @@ pub fn new_task() -> Html {
                 <Button label={"Create task"} onclick={create_task.clone()} data_test={"submit"}/>
             </div>
         </div>
+        </>
     }
 }

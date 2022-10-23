@@ -1,6 +1,7 @@
 use chrono::Local;
-use gloo::console::log;
+use gloo::{console::log, timers::callback::Timeout};
 use lazy_static::__Deref;
+use uuid::Uuid;
 use std::{rc::Rc, cmp::Ordering};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -10,16 +11,18 @@ use yewdux::prelude::*;
 
 use crate::{
     api::tasks::{task::{Task, Priority}, tasks_service::TasksService},
-    components::atoms::{
+    components::{atoms::{
         button::Button,
         checkbox::Checkbox,
         dropdown::{Dropdown, DropdownOption},
         route_link::RouteLink,
-    },
+    }, pages::error_data::ErrorData},
     router::Route,
     styles::{color::Color, styles::Styles},
     SessionStore, TaskStore,
 };
+
+use super::error_message::DEFAULT_TIMEOUT_MS;
 
 #[derive(Clone, Copy)]
 enum FilterMode {
@@ -38,8 +41,13 @@ enum SortMode {
     Created
 }
 
+#[derive(PartialEq, Properties)]
+pub struct TasksProperties {
+    pub error_data: Option<UseStateHandle<ErrorData>>
+}
+
 #[function_component(Tasks)]
-pub fn tasks() -> Html {
+pub fn tasks(props: &TasksProperties) -> Html {
     let (session_store, _) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
 
@@ -51,7 +59,7 @@ pub fn tasks() -> Html {
     if let Some(token) = token.clone() {
         let task_store = task_store.clone();
         let task_dispatch = task_dispatch.clone();
-        update_tasks_in_store(token, task_store, task_dispatch);
+        update_tasks_in_store(token, task_store, task_dispatch, props.error_data.clone());
     }
 
     let mut tasks: Vec<Task> = Vec::new();
@@ -71,8 +79,12 @@ pub fn tasks() -> Html {
         let token = token.clone();
         let task = task.clone();
         let task_dispatch = task_dispatch.clone();
-        let remove_onclick = delete_task_callback(task.clone(), task_dispatch.clone(), token.clone().unwrap(), || {});
-        let toggle_completed = toggle_completed_callback(task.clone(), task_dispatch.clone(), token.clone().unwrap());
+        let remove_onclick = delete_task_callback(
+            task.clone(), task_dispatch.clone(), token.clone().unwrap(), || {}, props.error_data.clone());
+
+        let toggle_completed = toggle_completed_callback(
+            task.clone(), task_dispatch.clone(), token.clone().unwrap(), props.error_data.clone());
+
         html! {
             <tr>
                 <td data-test={"priority"}>
@@ -304,6 +316,7 @@ fn toggle_completed_callback(
     task: Task,
     session_dispatch: Dispatch<TaskStore>,
     token: String,
+    error_data: Option<UseStateHandle<ErrorData>>
 ) -> Callback<MouseEvent> {
     let mut task = task.clone();
     if let None = task.completed_at {
@@ -313,11 +326,13 @@ fn toggle_completed_callback(
     }
     let session_dispatch = session_dispatch.clone();
     let token = token.clone();
+    let error_data = error_data.clone();
     Callback::from(move |event: MouseEvent| {
         event.prevent_default(); // lets the form to update checked status
         let token = token.clone();
         let task = task.clone();
         let session_dispatch = session_dispatch.clone();
+        let error_data = error_data.clone();
         spawn_local(async move {
             let response = TasksService::update_task(token.clone(), task.clone()).await;
             match response {
@@ -326,7 +341,24 @@ fn toggle_completed_callback(
                     store.tasks_valid = false;
                     store
                 }),
-                Err(error) => log!(format!("task deletion failed, details: {}", error)),
+                Err(error) => match error_data {
+                    Some(error_data) => {
+                        let error_uuid = Uuid::new_v4();
+                        {
+                            let error_data = error_data.clone();
+                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
+                                if error_data.uuid == error_uuid {
+                                    error_data.set(ErrorData::default());
+                                }
+                            })
+                            .forget();
+                        }
+                        error_data.set(ErrorData::default());
+
+                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
+                    },
+                    None => log!(format!("task completion switch failed, details: {}", error)),
+                }
             }
         })
     })
@@ -336,20 +368,40 @@ pub fn update_tasks_in_store(
     token: String,
     task_store: Rc<TaskStore>,
     task_dispatch: Dispatch<TaskStore>,
+    error_data: Option<UseStateHandle<ErrorData>>
 ) {
     let task_store = task_store.clone();
     let task_dispatch = task_dispatch.clone();
+    let error_data = error_data.clone();
     if !task_store.clone().tasks_valid {
         let task_dispatch = task_dispatch.clone();
         spawn_local(async move {
             let response = TasksService::get_tasks(token).await;
-            if let Ok(tasks) = response {
-                task_dispatch.reduce(|store| {
+            match response {
+                Ok(tasks) => task_dispatch.reduce(|store| {
                     let mut store = store.deref().clone();
                     store.tasks = Some(tasks);
                     store.tasks_valid = true;
                     store
-                });
+                }),
+                Err(error) => match error_data {
+                    Some(error_data) => {
+                        let error_uuid = Uuid::new_v4();
+                        {
+                            let error_data = error_data.clone();
+                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
+                                if error_data.uuid == error_uuid {
+                                    error_data.set(ErrorData::default());
+                                }
+                            })
+                            .forget();
+                        }
+                        error_data.set(ErrorData::default());
+
+                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
+                    },
+                    None => log!(format!("fetching tasks failed, details: {}", error)),
+                }
             }
         });
     }
@@ -360,17 +412,20 @@ pub fn delete_task_callback<F>(
     dispatch: Dispatch<TaskStore>,
     token: String,
     action: F,
+    error_data: Option<UseStateHandle<ErrorData>>
 ) -> Callback<MouseEvent>
 where
     F: Fn() + Clone + 'static,
 {
     let token = token.clone();
     let action = action.clone();
+    let error_data = error_data.clone();
     Callback::from(move |_: MouseEvent| {
         let task_id = task.id.clone();
         let dispatch = dispatch.clone();
         let token = token.clone();
         let action = action.clone();
+        let error_data = error_data.clone();
         spawn_local(async move {
             let response = TasksService::delete_task(token.clone(), task_id).await;
             match response {
@@ -380,7 +435,24 @@ where
                     store.tasks_valid = false;
                     store
                 }),
-                Err(error) => log!(format!("task deletion failed, details: {}", error)),
+                Err(error) => match error_data {
+                    Some(error_data) => {
+                        let error_uuid = Uuid::new_v4();
+                        {
+                            let error_data = error_data.clone();
+                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
+                                if error_data.uuid == error_uuid {
+                                    error_data.set(ErrorData::default());
+                                }
+                            })
+                            .forget();
+                        }
+                        error_data.set(ErrorData::default());
+
+                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
+                    },
+                    None => log!(format!("task deletion failed, details: {}", error)),
+                }
             }
         })
     })
