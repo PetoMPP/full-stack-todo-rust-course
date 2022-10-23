@@ -21,7 +21,8 @@ pub fn button(props: &ButtonProperties) -> Html {
 
     let style_string = format!(
         r#"
-        margin-top: 10px;
+        margin: 1vh;
+        width: 30%;
         color: {color};
         background-color: {background_color};
         border-radius: 12px;
