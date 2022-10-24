@@ -5,8 +5,9 @@ use stylist::Style;
 #[derive(PartialEq, Clone, Eq, Hash)]
 pub enum Color {
     Primary,
+    PrimaryBg,
     Secondary,
-    Info,
+    SecondaryBg,
     Highlight,
     Highlight2,
     Error,
@@ -49,8 +50,9 @@ impl Color {
     fn get_color_values() -> HashMap<Color, CssColor> {
         HashMap::from([
             (Color::Primary, CssColor::new(142, 202, 230, 100)),
-            (Color::Secondary, CssColor::new(2, 48, 71, 100)),
-            (Color::Info, CssColor::new(33, 156, 186, 100)),
+            (Color::PrimaryBg, CssColor::new(2, 48, 71, 100)),
+            (Color::Secondary, CssColor::new(33, 156, 186, 100)),
+            (Color::SecondaryBg, CssColor::new(220, 235, 250, 100)),
             (Color::Highlight, CssColor::new(255, 183, 3, 100)), 
             (Color::Highlight2, CssColor::new(251, 133, 0, 100)),
             (Color::Error, CssColor::new(158, 42, 43, 100)),

@@ -15,9 +15,9 @@ pub struct TextDisplayProperties {
 pub fn text_input(props: &TextDisplayProperties) -> Html {
     let input_style = format!(
         r#"
-        color: {info};
+        color: {};
     "#,
-        info = Color::Info.get_css_color()
+        Color::Secondary.get_css_color()
     );
 
     let input_style = Style::new(input_style).unwrap();

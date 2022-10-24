@@ -160,7 +160,7 @@ pub fn tasks(props: &TasksProperties) -> Html {
                 <col style="width:20%" />
                     <thead>
                         <th>{"Priority"}</th>
-                        <th>{"Completed?"}</th>
+                        <th>{"Done?"}</th>
                         <th>{"Title"}</th>
                         <th></th>
                     </thead>

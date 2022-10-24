@@ -12,7 +12,7 @@ impl Styles {
             margin: auto;
             display: flex;
             flex-direction: column;
-            width: 80vw;
+            width: min(80vw, 1050px);
 
             div {
                 margin: 0.5em 0;
@@ -41,25 +41,25 @@ impl Styles {
             margin-top: 1em;
 
             th {{
-                color: {secondary};
-                background-color: {info};
+                color: {primary_bg};
+                background-color: {secondary};
                 font-weight: bold;
                 border-bottom: 0.75em solid;
-                border-color: {secondary};
+                border-color: {primary_bg};
             }}
     
             table {{
                 width: 100%;
                 margin: auto;
-                background-color: {info};
+                background-color: {secondary};
             }}
     
             tr {{
                 color: black;
-                background-color: {primary};
+                background-color: {secondary_bg};
                 border-bottom: 0.25em solid;
                 border-top: 0.25em solid;
-                border-color: {secondary};
+                border-color: {primary_bg};
             }}
     
             th, td {{
@@ -72,9 +72,9 @@ impl Styles {
                 justify-content: center;
             }}
             "#,
-            info = Color::Info.get_css_color(),
-            primary = Color::Primary.get_css_color(),
+            primary_bg = Color::PrimaryBg.get_css_color(),
             secondary = Color::Secondary.get_css_color(),
+            secondary_bg = Color::SecondaryBg.get_css_color()
         ))
         .unwrap();
 
@@ -102,7 +102,6 @@ impl Styles {
     
         let mut style_string = format!(
             r#"
-            margin: 1em;
             text-decoration: none;
             color: {};
             :hover {{
@@ -126,7 +125,7 @@ impl Styles {
             margin: auto;
             display: flex;
             flex-direction: column;
-            width: 80vw;
+            width: min(80vw, 1050px);
             div {
                 margin: 1em 0;
             }
@@ -178,13 +177,13 @@ impl Styles {
 
     let style = Style::new(style_string).unwrap();
 
-    let div_style_string = format!(
+    let div_style = style!(
         r#"
-            padding: 2vw;
-        "#
-    );
-
-    let div_style = Style::new(div_style_string).unwrap();
+            padding: 1em;
+            a {
+                margin: 0 0.1em;
+            }
+        "#).unwrap();
 
     (style, div_style)
     }
