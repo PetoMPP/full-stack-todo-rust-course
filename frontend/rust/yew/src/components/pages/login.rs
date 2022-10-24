@@ -84,7 +84,9 @@ pub fn create_account() -> Html {
             <h2 class={Color::Secondary.into_style("color")}>{"Login"}</h2>
             <TextInput id={"username"} onchange={onchange.clone()} label={"Your username"} placeholder={"enter username.."} data_test={"username"}/>
             <TextInput id={"password"} {onchange} label={"Your password"} input_type={"password"} placeholder={"enter password.."} data_test={"password"}/>
-            <Button label={"Log in!"} data_test={"submit"}/>
+            <div>
+                <Button label={"Log in!"} data_test={"submit"}/>
+            </div>
         </form>
         </>
     }

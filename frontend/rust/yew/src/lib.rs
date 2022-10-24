@@ -2,7 +2,7 @@ use api::{auth::auth::Auth, tasks::task::Task};
 use serde::{Serialize, Deserialize};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use stylist::yew::{styled_component, Global};
+use stylist::{yew::{styled_component, Global}, style};
 use yewdux::prelude::*;
 
 use crate::router::{Route, switch};
@@ -30,12 +30,22 @@ pub struct TaskStore{
 
 #[styled_component(App)]
 pub fn app() -> Html {
+    let body_style = style!(
+        r#"
+        -ms-overflow-style: none;  /* Internet Explorer 10+ */
+        scrollbar-width: none;  /* Firefox */
+        overflow-y: auto;
+
+        ::-webkit-scrollbar { 
+            display: none;  /* Safari and Chrome */
+        }
+        "#).unwrap();
     html! {
         <>
         <Global css={MAIN_STYLESHEET}/>
         <BrowserRouter>
             <Navbar />
-            <div style={"overflow-y: auto;"}>
+            <div class={body_style}>
                 <Switch<Route> render={Switch::render(switch)}/>
             </div>
         </BrowserRouter>

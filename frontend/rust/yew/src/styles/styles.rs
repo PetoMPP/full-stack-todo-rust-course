@@ -143,6 +143,8 @@ impl Styles {
             flex-direction: column;
             width: min(80vw, 850px);
             div {
+                display: flex;
+                justify-content: center;
                 padding: 10px;
             }
             button {
