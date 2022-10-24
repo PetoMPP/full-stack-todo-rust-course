@@ -1,7 +1,5 @@
 use chrono::Local;
-use gloo::{console::log, timers::callback::Timeout};
 use lazy_static::__Deref;
-use uuid::Uuid;
 use std::{rc::Rc, cmp::Ordering};
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -19,10 +17,8 @@ use crate::{
     }, pages::error_data::ErrorData},
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore, TaskStore,
+    SessionStore, TaskStore, utils::handle_api_error,
 };
-
-use super::error_message::DEFAULT_TIMEOUT_MS;
 
 #[derive(Clone, Copy)]
 enum FilterMode {
@@ -48,7 +44,7 @@ pub struct TasksProperties {
 
 #[function_component(Tasks)]
 pub fn tasks(props: &TasksProperties) -> Html {
-    let (session_store, _) = use_store::<SessionStore>();
+    let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
 
     let token = match session_store.user.clone() {
@@ -59,7 +55,8 @@ pub fn tasks(props: &TasksProperties) -> Html {
     if let Some(token) = token.clone() {
         let task_store = task_store.clone();
         let task_dispatch = task_dispatch.clone();
-        update_tasks_in_store(token, task_store, task_dispatch, props.error_data.clone());
+        let session_dispatch = session_dispatch.clone();
+        update_tasks_in_store(token, task_store, task_dispatch, session_dispatch, props.error_data.clone());
     }
 
     let mut tasks: Vec<Task> = Vec::new();
@@ -80,10 +77,10 @@ pub fn tasks(props: &TasksProperties) -> Html {
         let task = task.clone();
         let task_dispatch = task_dispatch.clone();
         let remove_onclick = delete_task_callback(
-            task.clone(), task_dispatch.clone(), token.clone().unwrap(), || {}, props.error_data.clone());
+            task.clone(), task_dispatch.clone(), session_dispatch.clone(), token.clone().unwrap(), || {}, props.error_data.clone());
 
         let toggle_completed = toggle_completed_callback(
-            task.clone(), task_dispatch.clone(), token.clone().unwrap(), props.error_data.clone());
+            task.clone(), task_dispatch.clone(), session_dispatch.clone(), token.clone().unwrap(), props.error_data.clone());
 
         html! {
             <tr>
@@ -314,7 +311,8 @@ fn get_filter_options() -> Vec<DropdownOption> {
 
 fn toggle_completed_callback(
     task: Task,
-    session_dispatch: Dispatch<TaskStore>,
+    tasks_dispatch: Dispatch<TaskStore>,
+    session_dispatch: Dispatch<SessionStore>,
     token: String,
     error_data: Option<UseStateHandle<ErrorData>>
 ) -> Callback<MouseEvent> {
@@ -324,6 +322,7 @@ fn toggle_completed_callback(
     } else {
         task.completed_at = None;
     }
+    let tasks_dispatch = tasks_dispatch.clone();
     let session_dispatch = session_dispatch.clone();
     let token = token.clone();
     let error_data = error_data.clone();
@@ -331,34 +330,18 @@ fn toggle_completed_callback(
         event.prevent_default(); // lets the form to update checked status
         let token = token.clone();
         let task = task.clone();
+        let tasks_dispatch = tasks_dispatch.clone();
         let session_dispatch = session_dispatch.clone();
         let error_data = error_data.clone();
         spawn_local(async move {
             let response = TasksService::update_task(token.clone(), task.clone()).await;
             match response {
-                Ok(()) => session_dispatch.reduce(|store| {
+                Ok(()) => tasks_dispatch.reduce(|store| {
                     let mut store = store.deref().clone();
                     store.tasks_valid = false;
                     store
                 }),
-                Err(error) => match error_data {
-                    Some(error_data) => {
-                        let error_uuid = Uuid::new_v4();
-                        {
-                            let error_data = error_data.clone();
-                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                if error_data.uuid == error_uuid {
-                                    error_data.set(ErrorData::default());
-                                }
-                            })
-                            .forget();
-                        }
-                        error_data.set(ErrorData::default());
-
-                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
-                    },
-                    None => log!(format!("task completion switch failed, details: {}", error)),
-                }
+                Err(error) => handle_api_error(error, session_dispatch, error_data)
             }
         })
     })
@@ -368,13 +351,16 @@ pub fn update_tasks_in_store(
     token: String,
     task_store: Rc<TaskStore>,
     task_dispatch: Dispatch<TaskStore>,
+    session_dispatch: Dispatch<SessionStore>,
     error_data: Option<UseStateHandle<ErrorData>>
 ) {
     let task_store = task_store.clone();
     let task_dispatch = task_dispatch.clone();
+    let session_dispatch = session_dispatch.clone();
     let error_data = error_data.clone();
     if !task_store.clone().tasks_valid {
         let task_dispatch = task_dispatch.clone();
+        let session_dispatch = session_dispatch.clone();
         spawn_local(async move {
             let response = TasksService::get_tasks(token).await;
             match response {
@@ -384,24 +370,7 @@ pub fn update_tasks_in_store(
                     store.tasks_valid = true;
                     store
                 }),
-                Err(error) => match error_data {
-                    Some(error_data) => {
-                        let error_uuid = Uuid::new_v4();
-                        {
-                            let error_data = error_data.clone();
-                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                if error_data.uuid == error_uuid {
-                                    error_data.set(ErrorData::default());
-                                }
-                            })
-                            .forget();
-                        }
-                        error_data.set(ErrorData::default());
-
-                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
-                    },
-                    None => log!(format!("fetching tasks failed, details: {}", error)),
-                }
+                Err(error) => handle_api_error(error, session_dispatch, error_data)
             }
         });
     }
@@ -409,7 +378,8 @@ pub fn update_tasks_in_store(
 
 pub fn delete_task_callback<F>(
     task: Task,
-    dispatch: Dispatch<TaskStore>,
+    tasks_dispatch: Dispatch<TaskStore>,
+    session_dispatch: Dispatch<SessionStore>,
     token: String,
     action: F,
     error_data: Option<UseStateHandle<ErrorData>>
@@ -422,37 +392,21 @@ where
     let error_data = error_data.clone();
     Callback::from(move |_: MouseEvent| {
         let task_id = task.id.clone();
-        let dispatch = dispatch.clone();
+        let tasks_dispatch = tasks_dispatch.clone();
+        let session_dispatch = session_dispatch.clone();
         let token = token.clone();
         let action = action.clone();
         let error_data = error_data.clone();
         spawn_local(async move {
             let response = TasksService::delete_task(token.clone(), task_id).await;
             match response {
-                Ok(()) => dispatch.reduce(|store| {
+                Ok(()) => tasks_dispatch.reduce(|store| {
                     action();
                     let mut store = store.deref().clone();
                     store.tasks_valid = false;
                     store
                 }),
-                Err(error) => match error_data {
-                    Some(error_data) => {
-                        let error_uuid = Uuid::new_v4();
-                        {
-                            let error_data = error_data.clone();
-                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                if error_data.uuid == error_uuid {
-                                    error_data.set(ErrorData::default());
-                                }
-                            })
-                            .forget();
-                        }
-                        error_data.set(ErrorData::default());
-
-                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
-                    },
-                    None => log!(format!("task deletion failed, details: {}", error)),
-                }
+                Err(error) => handle_api_error(error, session_dispatch, error_data)
             }
         })
     })

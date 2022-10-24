@@ -1,8 +1,6 @@
 use std::rc::Rc;
 use chrono::Local;
-use gloo::timers::callback::Timeout;
 use lazy_static::__Deref;
-use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -23,13 +21,13 @@ use crate::{
             text_input::{ControlType, TextInput},
         },
         organisms::{
-            error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
+            error_message::ErrorMessage,
             tasks::{delete_task_callback, update_tasks_in_store},
         },
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore, TaskStore,
+    SessionStore, TaskStore, utils::handle_api_error,
 };
 
 use super::error_data::ErrorData;
@@ -45,7 +43,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     
     let error_data = use_state(|| ErrorData::default());
 
-    let (session_store, _) = use_store::<SessionStore>();
+    let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
 
     let task_data = use_mut_ref(|| Task::default());
@@ -83,8 +81,9 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     {
         let task_store = task_store.clone();
         let task_dispatch = task_dispatch.clone();
+        let session_dispatch = session_dispatch.clone();
         if let Some(user) = session_store.user.clone() {
-            update_tasks_in_store(user.token, task_store, task_dispatch, Some(error_data.clone()));
+            update_tasks_in_store(user.token, task_store, task_dispatch, session_dispatch, Some(error_data.clone()));
         }
     }
 
@@ -135,11 +134,13 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         }
 
         let task_dispatch = task_dispatch.clone();
+        let session_dispatch = session_dispatch.clone();
         Callback::from(move |_: MouseEvent| {
             let error_data = error_data.clone();
             let history = history.clone();
             let edit_state = edit_state.clone();
             let task_dispatch = task_dispatch.clone();
+            let session_dispatch = session_dispatch.clone();
             let token = token.clone();
             let task: Task = task_data.deref().clone().into();
             spawn_local(async move {
@@ -156,21 +157,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                             store
                         })
                     }
-                    Err(error) => {
-                        let error_uuid = Uuid::new_v4();
-                        {
-                            let error_data = error_data.clone();
-                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                if error_data.uuid == error_uuid {
-                                    error_data.set(ErrorData::default());
-                                }
-                            })
-                            .forget();
-                        }
-                        error_data.set(ErrorData::default());
-
-                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
-                    }
+                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
                 }
             })
         })
@@ -182,8 +169,6 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         Callback::from(move |_| history.push(Route::Home))
     };
 
-    let task_dispatch = task_dispatch.clone();
-    let session_store = session_store.clone();
     let delete_task = {
         let task = task.clone();
         let history = history.clone();
@@ -192,6 +177,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         delete_task_callback(
             task.clone(),
             task_dispatch.clone(),
+            session_dispatch.clone(),
             session_store.user.clone().unwrap().token.clone(),
             move || history.push(Route::Home),
             Some(error_data.clone())

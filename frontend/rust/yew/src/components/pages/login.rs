@@ -2,15 +2,13 @@ use crate::{
     api::auth::auth_service::AuthService,
     components::{
         atoms::{button::Button, text_input::TextInput},
-        organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
+        organisms::error_message::ErrorMessage,
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore, TaskStore,
+    SessionStore, TaskStore, utils::handle_api_error,
 };
-use gloo::timers::callback::Timeout;
 use lazy_static::__Deref;
-use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -69,21 +67,7 @@ pub fn create_account() -> Html {
                         });
                         history.push(Route::Home)
                     }
-                    Err(error) => {
-                        let error_uuid = Uuid::new_v4();
-                        {
-                            let error_data = error_data.clone();
-                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                if error_data.uuid == error_uuid {
-                                    error_data.set(ErrorData::default());
-                                }
-                            })
-                            .forget();
-                        }
-                        error_data.set(ErrorData::default());
-
-                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
-                    }
+                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
                 }
             });
         })

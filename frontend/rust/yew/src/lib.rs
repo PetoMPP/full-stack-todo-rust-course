@@ -12,6 +12,7 @@ use components::organisms::navbar::Navbar;
 mod router;
 mod styles;
 mod api;
+mod utils;
 
 const MAIN_STYLESHEET: &str = include_str!("main.css");
 
