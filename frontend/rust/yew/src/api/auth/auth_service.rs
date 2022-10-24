@@ -1,7 +1,7 @@
-use reqwasm::{http::{Method, Headers}, Error};
+use reqwasm::http::{Method, Headers};
 use serde_json::json;
 
-use crate::api::{api_client::ApiClient, api_error::ApiError};
+use crate::api::{api_client::{ApiClient, ApiError}, api_error_response::ApiErrorResponse};
 
 use super::{auth_response::AuthResponse, auth::Auth};
 
@@ -11,8 +11,8 @@ const LOGIN_URI: &str = "/users/login";
 const USERS_URI: &str = "/users";
 
 impl AuthService {
-    pub async fn login(username: String, password: String) -> Result<Auth, String> {
-        let response: Result<Result<AuthResponse, ApiError>, Error> = ApiClient::send_json(
+    pub async fn login(username: String, password: String) -> Result<Auth, ApiError> {
+        let response: Result<Result<AuthResponse, ApiErrorResponse>, ApiError> = ApiClient::send_json(
             LOGIN_URI,
             Method::POST,
         Some(AuthService::get_auth_body(username, password)),
@@ -21,14 +21,14 @@ impl AuthService {
         return match response {
             Ok(ok) => match ok {
                 Ok(ok) => Ok(ok.data),
-                Err(err) => Err(err.error),
+                Err(error) => Err(ApiError::Other(error.error)),
             },
-            Err(err) => Err(err.to_string()),
+            Err(error) => Err(error),
         }
     }
 
-    pub async fn register(username: String, password: String) -> Result<Auth, String> {
-        let response: Result<Result<AuthResponse, ApiError>, Error> = ApiClient::send_json(
+    pub async fn register(username: String, password: String) -> Result<Auth, ApiError> {
+        let response: Result<Result<AuthResponse, ApiErrorResponse>, ApiError> = ApiClient::send_json(
             USERS_URI,
             Method::POST,
             Some(AuthService::get_auth_body(username, password)),
@@ -39,9 +39,9 @@ impl AuthService {
         return match response {
             Ok(ok) => match ok {
                 Ok(ok) => Ok(ok.data),
-                Err(err) => Err(err.error),
+                Err(error) => Err(ApiError::Other(error.error)),
             },
-            Err(err) => Err(err.to_string()),
+            Err(error) => Err(error),
         }
     }
 

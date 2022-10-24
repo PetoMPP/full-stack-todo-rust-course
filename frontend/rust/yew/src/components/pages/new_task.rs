@@ -7,7 +7,7 @@ use crate::{
             dropdown::Dropdown,
             text_input::{ControlType, TextInput},
         },
-        organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS},
+        organisms::error_message::ErrorMessage,
         pages::{
             error_data::ErrorData,
             task_details::{get_priority_options, get_selected_value},
@@ -15,13 +15,11 @@ use crate::{
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore, TaskStore,
+    SessionStore, TaskStore, utils::handle_api_error,
 };
 use chrono::Local;
-use gloo::timers::callback::Timeout;
 use lazy_static::__Deref;
 use stylist::yew::styled_component;
-use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -41,7 +39,7 @@ pub fn new_task() -> Html {
 
     let error_data = use_state(|| ErrorData::default());
 
-    let (session_store, _) = use_store::<SessionStore>();
+    let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (_, task_dispatch) = use_store::<TaskStore>();
 
     let task_data = use_mut_ref(|| Task::default());
@@ -89,9 +87,11 @@ pub fn new_task() -> Html {
         let task_data = task_data.clone();
 
         let task_dispatch = task_dispatch.clone();
+        let session_dispatch = session_dispatch.clone();
         Callback::from(move |_: MouseEvent| {
             let history = history.clone();
             let task_dispatch = task_dispatch.clone();
+            let session_dispatch = session_dispatch.clone();
             let token = token.clone();
             let task: Task = task_data.deref().clone().into();
             let error_data = error_data.clone();
@@ -112,25 +112,7 @@ pub fn new_task() -> Html {
                             store
                         })
                     }
-                    Err(error) => {
-                        let error_uuid = Uuid::new_v4();
-                        {
-                            let error_data = error_data.clone();
-                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                if error_data.uuid == error_uuid {
-                                    error_data.set(ErrorData::default());
-                                }
-                            })
-                            .forget();
-                        }
-                        error_data.set(ErrorData::default());
-
-                        error_data.set(ErrorData {
-                            message: error,
-                            display: true,
-                            uuid: error_uuid,
-                        });
-                    }
+                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
                 }
             })
         })
