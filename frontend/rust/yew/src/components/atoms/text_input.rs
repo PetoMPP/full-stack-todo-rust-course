@@ -47,9 +47,6 @@ pub fn text_input(props: &TextInputProperties) -> Html {
         background-color: {secondary};
         border-radius: 3px;
         border: 1px solid transparent;
-        border-top: none;
-        border-bottom: 1px solid #DDD;
-        box-shadow: inset 0 1px 2px rgba({primary_bg},.39), 0 -1px 1px {primary_bg}, 0 1px 0 {primary_bg};
     "#,
         primary_bg = Color::PrimaryBg.get_css_color(),
         secondary = Color::Secondary.get_css_color(),
