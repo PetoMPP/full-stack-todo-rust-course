@@ -28,32 +28,29 @@ pub fn text_input(props: &TextInputProperties) -> Html {
     let input_style = format!(
         r#"
         ::placeholder {{ /* Chrome, Firefox, Opera, Safari 10.1+ */
-            color: {light_gray};
+            color: {secondary_bg};
             font-style: italic;
             opacity: 0.5; /* Firefox */
         }}
         
         :-ms-input-placeholder {{ /* Internet Explorer 10-11 */
-            color: {light_gray};
+            color: {secondary_bg};
             font-style: italic;
         }}
         
         ::-ms-input-placeholder {{ /* Microsoft Edge */
-            color: {light_gray};
+            color: {secondary_bg};
             font-style: italic;
         }}
 
-        color: {secondary};
-        background-color: {info};
+        color: {primary_bg};
+        background-color: {secondary};
         border-radius: 3px;
         border: 1px solid transparent;
-        border-top: none;
-        border-bottom: 1px solid #DDD;
-        box-shadow: inset 0 1px 2px rgba({secondary},.39), 0 -1px 1px {secondary}, 0 1px 0 {secondary};
     "#,
-        light_gray = Color::CustomStr("#DDD".to_owned()).get_css_color(),
+        primary_bg = Color::PrimaryBg.get_css_color(),
         secondary = Color::Secondary.get_css_color(),
-        info = Color::Info.get_css_color()
+        secondary_bg = Color::SecondaryBg.get_css_color()
     );
 
     let input_style = Style::new(input_style).unwrap();
