@@ -23,15 +23,13 @@ pub struct DropdownProperties {
 pub fn dropdown(props: &DropdownProperties) -> Html {
     let select_style = format!(
         r#"
-        color: {secondary};
-        background-color: {info};
+        color: {primary_bg};
+        background-color: {secondary};
         border-radius: 3px;
         border: 1px solid transparent;
-        border-top: none;
-        border-bottom: 1px solid #DDD;
     "#,
-        secondary = Color::Secondary.get_css_color(),
-        info = Color::Info.get_css_color()
+        primary_bg = Color::PrimaryBg.get_css_color(),
+        secondary = Color::Secondary.get_css_color()
     );
 
     let select_style = Style::new(select_style).unwrap();

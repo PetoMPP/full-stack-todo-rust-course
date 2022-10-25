@@ -2,15 +2,13 @@ use crate::{
     api::auth::auth_service::AuthService,
     components::{
         atoms::{button::Button, text_input::TextInput},
-        organisms::error_message::{ErrorMessage, DEFAULT_TIMEOUT_MS}
+        organisms::error_message::ErrorMessage
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore, TaskStore,
+    SessionStore, TaskStore, utils::handle_api_error,
 };
-use gloo::timers::callback::Timeout;
 use lazy_static::__Deref;
-use uuid::Uuid;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -69,21 +67,7 @@ pub fn create_account() -> Html {
                         });
                         history.push(Route::Home)
                     }
-                    Err(error) => {
-                        let error_uuid = Uuid::new_v4();
-                        {
-                            let error_data = error_data.clone();
-                            Timeout::new(DEFAULT_TIMEOUT_MS, move || {
-                                if error_data.uuid == error_uuid {
-                                    error_data.set(ErrorData::default());
-                                }
-                            })
-                            .forget();
-                        }
-                        error_data.set(ErrorData::default());
-
-                        error_data.set(ErrorData { message: error, display: true, uuid: error_uuid });
-                    }
+                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
                 }
             });
         })
@@ -97,10 +81,12 @@ pub fn create_account() -> Html {
             <ErrorMessage message={error_data.message.clone()}/>
         }
         <form class={style} {onsubmit}>
-            <h2 class={Color::Info.into_style("color")}>{"Create account"}</h2>
+            <h2 class={Color::Secondary.into_style("color")}>{"Create account"}</h2>
             <TextInput id={"username"} onchange={onchange.clone()} label={"Your username"} placeholder={"enter username.."} data_test={"username"}/>
             <TextInput id={"password"} {onchange} label={"Your password"} input_type={"password"} placeholder={"enter password.."} data_test={"password"}/>
-            <Button label={"Create account!"} data_test={"submit"}/>
+            <div>
+                <Button label={"Create account!"} data_test={"submit"}/>
+            </div>
         </form>
         </>
     }

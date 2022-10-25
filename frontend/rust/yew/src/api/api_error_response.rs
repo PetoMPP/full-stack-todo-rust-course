@@ -1,6 +1,6 @@
 use serde::*;
 
 #[derive(Serialize, Deserialize, Debug)]
-pub struct ApiError {
+pub struct ApiErrorResponse {
     pub error: String
 }

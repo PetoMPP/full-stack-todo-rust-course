@@ -15,24 +15,30 @@ pub struct ButtonProperties {
 
 #[styled_component(Button)]
 pub fn button(props: &ButtonProperties) -> Html {
-    let color = props.fore_color.clone().unwrap_or(Color::Secondary);
+    let color = props.fore_color.clone().unwrap_or(Color::PrimaryBg);
     let background_color = props.back_color.clone().unwrap_or(Color::Highlight);
     let hover_color = props.hover_color.clone().unwrap_or(Color::Highlight2);
 
     let style_string = format!(
         r#"
-        margin: 1vh;
+        margin: 1vh 0;
         width: 30%;
         color: {color};
         background-color: {background_color};
         border-radius: 12px;
         text-align: center;
         border: 1px solid transparent;
-        padding: 1vw;
+        padding: 0.25rem 0.5rem;
         cursor: pointer;
+
         :hover {{
             background-color: {hover_color};
         }}
+
+        @media only screen and (max-width: 650px) {{
+            width: 100%;
+        }}
+
     "#,
         color = color.get_css_color(),
         background_color = background_color.get_css_color(),
