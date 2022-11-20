@@ -6,7 +6,7 @@ namespace TodoAPI_MVC.Database.Memory
     public class MemoryDatabase : IDatabase
     {
         public ITaskData TaskData { get; }
-        public IDatabaseUserStore<User> UserStore { get; set; }
+        public IDatabaseUserStore<User> UserStore { get; }
 
         public MemoryDatabase()
         {

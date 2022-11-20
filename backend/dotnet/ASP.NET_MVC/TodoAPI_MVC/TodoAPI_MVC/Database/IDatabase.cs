@@ -1,12 +1,11 @@
-﻿using Microsoft.AspNetCore.Identity;
-using TodoAPI_MVC.Models;
+﻿using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Database
 {
     public interface IDatabase
     {
         public ITaskData TaskData { get; }
-        public IDatabaseUserStore<User> UserStore { get; set; }
+        public IDatabaseUserStore<User> UserStore { get; }
     }
 
     public interface ITaskData
