@@ -13,6 +13,8 @@ services:
     profiles:
       - dotnet-aspnet
     build: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
+    volumes:
+      - ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC:/code/
     expose:
       - "5000"
     ports:

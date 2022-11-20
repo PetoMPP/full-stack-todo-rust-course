@@ -37,7 +37,7 @@ namespace TodoAPI_MVC
         #if DEBUG
             app.UseSwagger();
             app.UseSwaggerUI();
-#endif
+        #endif
 
             app.UseHttpsRedirection();
             app.UseCors();
