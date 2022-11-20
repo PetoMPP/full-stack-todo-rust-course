@@ -11,8 +11,9 @@ env:
     cd ~/source/repos/${{ github.event.repository.name }}
     git reset --hard
     git pull
-    docker compose --profile nodejs-express down
-    docker compose --profile nodejs-express up --wait --force-recreate
+    docker stop $(docker ps -a -q)
+    docker rm $(docker ps -a -q)
+    docker compose --profile dotnet-aspnet --profile rust-yew --remove-orphans up
 
 jobs:
   build:

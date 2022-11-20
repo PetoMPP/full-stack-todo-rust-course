@@ -14,7 +14,7 @@ describe("todo app", () => {
   describe("creating an account", () => {
     it("should be able to create an account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
 
       cy.createAccount(username, password)
         .dget("create-account")
@@ -31,7 +31,7 @@ describe("todo app", () => {
   describe("logging into an account", () => {
     it("should be able to log into an existing account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
 
       cy.createAccount(username, password)
         .login(username, password)
@@ -45,7 +45,7 @@ describe("todo app", () => {
   describe("default todo items", () => {
     beforeEach("create account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
@@ -68,7 +68,7 @@ describe("todo app", () => {
 
     beforeEach("create account", () => {
       username = faker.internet.userName();
-      password = faker.internet.password();
+      password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
@@ -175,7 +175,7 @@ describe("todo app", () => {
   describe("creating a task", () => {
     beforeEach("create account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
@@ -222,7 +222,7 @@ describe("todo app", () => {
     let password;
     beforeEach("create account", () => {
       username = faker.internet.userName();
-      password = faker.internet.password();
+      password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
@@ -250,7 +250,7 @@ describe("todo app", () => {
   describe("home page", () => {
     beforeEach("create account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
     it("should allow the user to sort the tasks", () => {
