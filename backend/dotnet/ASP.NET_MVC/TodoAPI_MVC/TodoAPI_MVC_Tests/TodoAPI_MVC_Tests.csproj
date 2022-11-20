@@ -19,7 +19,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\TodoAPI MVC\TodoAPI MVC.csproj" />
+    <ProjectReference Include="..\TodoAPI_MVC\TodoAPI_MVC.csproj" />
   </ItemGroup>
 
 </Project>
