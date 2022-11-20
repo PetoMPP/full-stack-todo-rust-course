@@ -6,6 +6,7 @@ on:
 env:
   Node-dir: ${{ github.workspace }}/backend/nodejs/express
   Yew-dir: ${{ github.workspace }}/frontend/rust/yew
+  Dotnet-dir: ${{ github.workspace }}/backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
 
 jobs:
   build:
@@ -36,6 +37,20 @@ jobs:
     - name: Run Node.js tests
       run: npm run test --if-present
       working-directory: ${{ env.Node-dir }}
+
+    # .NET
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: 6.0.x
+
+    - name: Build .NET
+      run: dotnet build -c Release
+      working-directory: ${{ env.Dotnet-dir }}
+
+    - name: Run .NET tests
+      run: dotnet test -c Release
+      working-directory: ${{ env.Dotnet-dir }}
 
     # Build frontend
     # Yew.rs
