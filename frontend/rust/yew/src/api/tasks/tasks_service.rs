@@ -10,7 +10,7 @@ const TASKS_URI: &str = "/tasks";
 
 impl TasksService {
     pub async fn create_task(token: String, task: Task) -> Result<Task, ApiError> {
-        let response: Result<Result<TaskResponse, ApiErrorResponse>, ApiError> = ApiClient::send_json(
+        let response = ApiClient::send_json::<TaskResponse, ApiErrorResponse>(
             TASKS_URI,
             Method::POST,
             Some(serde_json::to_string(&task).unwrap()),
@@ -19,11 +19,8 @@ impl TasksService {
         .await;
 
         return match response {
-            Ok(ok) => match ok {
-                Ok(ok) => Ok(ok.data),
-                Err(error) => Err(ApiError::Other(error.error)),
-            },
-            Err(error) => Err(error),
+            Ok(ok) => Ok(ok.data),
+            Err(error) => Err(error)
         };
     }
 
@@ -60,7 +57,7 @@ impl TasksService {
 
     pub async fn get_tasks(token: String) -> Result<Vec<Task>, ApiError> {
         let body: Option<&str> = None;
-        let response: Result<Result<TasksResponse, ApiErrorResponse>, ApiError> = ApiClient::send_json(
+        let response = ApiClient::send_json::<TasksResponse, ApiErrorResponse>(
             TASKS_URI,
             Method::GET,
             body,
@@ -69,11 +66,8 @@ impl TasksService {
         .await;
 
         return match response {
-            Ok(ok) => match ok {
-                Ok(ok) => Ok(ok.data),
-                Err(error) => Err(ApiError::Other(error.error)),
-            },
-            Err(error) => Err(error),
+            Ok(ok) => Ok(ok.data),
+            Err(error) => Err(error)
         };
     }
 
