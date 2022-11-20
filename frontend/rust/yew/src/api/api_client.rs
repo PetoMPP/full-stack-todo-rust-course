@@ -52,16 +52,18 @@ impl ApiClient {
             request = request.headers(headers.into());
         }
 
-        return match ApiClient::ensure_success_status_code(request.send().await) {
-            Ok(response) => Ok(response.text().await.unwrap()),
-            Err(error) => Err(error),
-        }
+        let response = request.send().await;
+
+        return match Self::ensure_success_status_code(&response) {
+            Some(error) => Err(error),
+            None => Ok(response.unwrap().text().await.unwrap())
+        };
     }
 
-    pub async fn send_json<T, E>(uri: &str, method: Method, body: Option<impl Into<JsValue>>, headers: Option<impl Into<Headers>>) -> Result<Result<T, E>, ApiError>
+    pub async fn send_json<T, E>(uri: &str, method: Method, body: Option<impl Into<JsValue>>, headers: Option<impl Into<Headers>>) -> Result<T, ApiError>
     where 
         T: DeserializeOwned,
-        E: DeserializeOwned {
+        E: Into<ApiError> + DeserializeOwned {
         let mut request = Request::new(&format!("{}{}", API_CONFIG.api_uri, uri)).method(method);
             
         if let Some(body) = body {
@@ -72,34 +74,41 @@ impl ApiClient {
             request = request.headers(headers.into());
         }
 
-        return match ApiClient::ensure_success_status_code(request.send().await) {
-            Ok(response) => ApiClient::parse_response(response).await,
-            Err(error) => Err(error),
-        }
+        let response = request.send().await;
+
+        let error = Self::ensure_success_status_code(&response);
+
+        return match error {
+            Some(error) => match response {
+                Ok(response) => Self::parse_response::<T, E>(response).await,
+                Err(_) => Err(error)
+            },
+            None => Self::parse_response::<T, E>(response.unwrap()).await,
+        };
     }
 
-    fn ensure_success_status_code(response: Result<Response, Error>) -> Result<Response, ApiError> {
+    fn ensure_success_status_code(response: &Result<Response, Error>) -> Option<ApiError> {
         match response {
             Ok(response) => 
                 match response.status() {
-                    200..=299 => Ok(response),
-                    _ => Err(ApiError::HttpStatus(response.status(), response.status_text()))
+                    200..=299 => None,
+                    _ => Some(ApiError::HttpStatus(response.status(), response.status_text()))
                 }
-            Err(error) => Err(ApiError::Other(error.to_string())),
+            Err(error) => Some(ApiError::Other(error.to_string())),
         }
     }
 
-    async fn parse_response<T, E>(response: Response) -> Result<Result<T, E>, ApiError>
+    async fn parse_response<T, E>(response: Response) -> Result<T, ApiError>
     where 
         T: DeserializeOwned,
-        E: DeserializeOwned {
+        E: Into<ApiError> + DeserializeOwned {
             let response_clone = Response::from_raw(response.as_raw().clone().unwrap());
             return match response_clone.json::<T>().await {
-                Ok(ok) => Ok(Ok(ok)),
+                Ok(ok) => Ok(ok),
                 Err(_) => {
                     let response_clone = Response::from_raw(response.as_raw().clone().unwrap());
                     match response_clone.json::<E>().await {
-                        Ok(ok) => Ok(Err(ok)),
+                        Ok(ok) => Err(ok.into()),
                         Err(error) => Err(ApiError::Parse(error.to_string())),
                 }}
             };
