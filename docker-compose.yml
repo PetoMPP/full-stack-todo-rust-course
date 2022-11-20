@@ -1,6 +1,8 @@
 version: "3.9"
 services:
   postgres-db:
+    profiles:
+      - postgres-db
     image: postgres:14
     volumes:
       - db-data:/var/lib/postgresql/data
