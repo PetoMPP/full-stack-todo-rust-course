@@ -12,13 +12,16 @@ namespace TodoAPI_MVC.Controllers
     [Route("api/v1/[controller]")]
     public class UsersController : ApiControllerBase
     {
+        private readonly ITaskData _taskData;
+
         public UsersController(
+            ITaskData taskData,
             IConfiguration config,
             UserManager<User> userManager,
-            SignInManager<User> signInManager,
-            IDatabase database)
-            : base(config, userManager, signInManager, database)
+            SignInManager<User> signInManager)
+            : base(config, userManager, signInManager)
         {
+            _taskData = taskData;
         }
 
         [HttpPost]
@@ -29,7 +32,7 @@ namespace TodoAPI_MVC.Controllers
             if (result.Succeeded)
             {
                 var newUser = await _userManager.FindByNameAsync(user.NormalizedUsername);
-                await _database.TaskData.CreateDefaultsAsync(newUser.Id);
+                await _taskData.CreateDefaultsAsync(newUser.Id);
                 newUser.Token = _config.GetToken(newUser);
                 return Ok(newUser);
             }

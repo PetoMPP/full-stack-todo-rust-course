@@ -12,49 +12,52 @@ namespace TodoAPI_MVC.Controllers
     [Route("api/v1/[controller]")]
     public class TasksController : ApiControllerBase
     {
+        private readonly ITaskData _taskData;
+
         public TasksController(
+            ITaskData taskData,
             IConfiguration config,
             UserManager<User> userManager,
-            SignInManager<User> signInManager,
-            IDatabase database)
-            : base(config, userManager, signInManager, database)
+            SignInManager<User> signInManager)
+            : base(config, userManager, signInManager)
         {
+            _taskData = taskData;
         }
 
         [HttpPost]
         public async Task<IActionResult> Create(TodoTask newTask)
         {
-            return (await _database.TaskData.CreateAsync(newTask, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.CreateAsync(newTask, await GetCurrentUserId())).ToIActionResult(this);
         }
 
         [HttpGet("{id:int}")]
         public async Task<IActionResult> Get(int id)
         {
-            return (await _database.TaskData.GetAsync(id, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.GetAsync(id, await GetCurrentUserId())).ToIActionResult(this);
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return (await _database.TaskData.GetAllAsync(await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.GetAllAsync(await GetCurrentUserId())).ToIActionResult(this);
         }
 
         [HttpPatch("{id:int}")]
         public async Task<IActionResult> Update(int id, TodoTask updatedTask)
         {
-            return (await _database.TaskData.UpdateAsync(id, updatedTask, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.UpdateAsync(id, updatedTask, await GetCurrentUserId())).ToIActionResult(this);
         }
 
         [HttpPatch("{id:int}/toggle-completed")]
         public async Task<IActionResult> ToggleCompleted(int id)
         {
-            return (await _database.TaskData.ToggleCompletedAsync(id, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.ToggleCompletedAsync(id, await GetCurrentUserId())).ToIActionResult(this);
         }
 
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> Delete(int id)
         {
-            return (await _database.TaskData.DeleteAsync(id, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.DeleteAsync(id, await GetCurrentUserId())).ToIActionResult(this);
         }
     }
 }
