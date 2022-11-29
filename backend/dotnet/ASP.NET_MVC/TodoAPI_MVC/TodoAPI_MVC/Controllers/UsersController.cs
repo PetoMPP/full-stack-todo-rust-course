@@ -28,7 +28,7 @@ namespace TodoAPI_MVC.Controllers
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (result.Succeeded)
             {
-                var newUser = _userManager.Users.First(u => u.NormalizedUsername == user.NormalizedUsername);
+                var newUser = await _userManager.FindByNameAsync(user.NormalizedUsername);
                 await _database.TaskData.CreateDefaultsAsync(newUser.Id);
                 newUser.Token = _config.GetToken(newUser);
                 return Ok(newUser);

@@ -9,8 +9,6 @@ namespace TodoAPI_MVC.Database.Memory
         private readonly List<User> _users = new();
         private readonly Dictionary<string, string> _passwordHashes = new();
 
-        public IQueryable<User> Users => new EnumerableQuery<User>(_users);
-
         public Task<IdentityResult> CreateAsync(User user, CancellationToken cancellationToken)
         {
             user.Id = _users.GetNextValue(u => u.Id);
@@ -65,6 +63,7 @@ namespace TodoAPI_MVC.Database.Memory
 
         public Task SetNormalizedUserNameAsync(User user, string normalizedName, CancellationToken cancellationToken)
         {
+            user.NormalizedUsername = normalizedName;
             return Task.CompletedTask;
         }
 

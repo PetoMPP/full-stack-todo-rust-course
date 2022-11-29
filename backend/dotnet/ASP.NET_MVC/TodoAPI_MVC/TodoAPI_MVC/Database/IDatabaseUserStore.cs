@@ -4,8 +4,7 @@ namespace TodoAPI_MVC.Database
 {
     public interface IDatabaseUserStore<TUser> :
         IUserStore<TUser>,
-        IUserPasswordStore<TUser>,
-        IQueryableUserStore<TUser>
+        IUserPasswordStore<TUser>
         where TUser : class
     {
     }
