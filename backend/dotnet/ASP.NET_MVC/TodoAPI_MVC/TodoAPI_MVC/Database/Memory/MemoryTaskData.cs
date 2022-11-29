@@ -5,24 +5,6 @@ namespace TodoAPI_MVC.Database.Memory
 {
     internal class MemoryTaskData : ITaskData
     {
-        private static readonly TodoTask[] DefaultTasks = new[]
-        {
-            new TodoTask
-            {
-                Id = 0,
-                Title = "I am a task, you can complete me by checking the box",
-                Priority = Priority.A,
-                Description = "This is my description"
-            },
-            new TodoTask
-            {
-                Id = 0,
-                Title = "See my details for by clicking me",
-                Priority = Priority.B,
-                Description = "My description can be changed"
-            },
-        };
-
         private readonly List<TodoTask> _tasks = new();
         private readonly Dictionary<int, int> _taskOwners = new();
 
@@ -122,7 +104,7 @@ namespace TodoAPI_MVC.Database.Memory
         public async Task<IDatabaseResult<TodoTask[]>> CreateDefaultsAsync(int? userId)
         {
             var tasks = new List<TodoTask>();
-            foreach (var task in DefaultTasks)
+            foreach (var task in Defaults.DefaultTasks)
             {
                 var result = await CreateAsync(task, userId);
                 if (!result.IsOk)
