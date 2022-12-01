@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Identity;
-using TodoAPI_MVC.Database;
-using TodoAPI_MVC.Database.Memory;
+﻿using Microsoft.AspNetCore.Identity;
 using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Middleware;
 using TodoAPI_MVC.Models;
@@ -20,11 +18,11 @@ namespace TodoAPI_MVC
             }));
 
             builder.AddJwtAuthentication();
+            builder.Services.AddDatabaseContext();
 
             builder.Services.AddIdentityCore<User>()
                 .AddSignInManager<SignInManager<User>>();
-            builder.Services.AddSingleton<IDatabase, MemoryDatabase>();
-            builder.Services.AddSingleton<IUserStore<User>, MemoryUserStore>();
+
             builder.Services.AddControllers();
 
         #if DEBUG

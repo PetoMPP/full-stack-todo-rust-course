@@ -32,7 +32,7 @@ namespace TodoAPI_MVC.Controllers
             if (result.Succeeded)
             {
                 var newUser = await _userManager.FindByNameAsync(user.NormalizedUsername);
-                await _taskData.CreateDefaultsAsync(newUser.Id);
+                await ITaskData.CreateDefaultsAsync(_taskData, newUser.Id);
                 newUser.Token = _config.GetToken(newUser);
                 return Ok(newUser);
             }

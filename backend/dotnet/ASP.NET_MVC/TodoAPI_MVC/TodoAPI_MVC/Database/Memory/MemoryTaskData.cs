@@ -24,13 +24,13 @@ namespace TodoAPI_MVC.Database.Memory
             return Task.FromResult(DatabaseResults.Ok<TodoTask?>(task));
         }
 
-        public Task<IDatabaseResult<TodoTask?>> UpdateAsync(int? taskId, TodoTask task, int? userId)
+        public Task<IDatabaseResult<TodoTask?>> UpdateAsync(int id, TodoTask task, int? userId)
         {
             var validationError = task.Validate();
             if (validationError is string error)
                 return Task.FromResult(DatabaseResults.Error<TodoTask?>(error));
 
-            var taskIndex = _tasks.FindIndex(t => t.Id == taskId);
+            var taskIndex = _tasks.FindIndex(t => t.Id == id);
 
             if (taskIndex < 0)
                 return Task.FromResult(DatabaseResults.Error<TodoTask?>("Task not found!"));
@@ -99,21 +99,6 @@ namespace TodoAPI_MVC.Database.Memory
                 return Task.FromResult(DatabaseResults.Error<TodoTask?>("Task not found!"));
 
             return Task.FromResult(DatabaseResults.Ok<TodoTask?>(_tasks[taskIndex]));
-        }
-
-        public async Task<IDatabaseResult<TodoTask[]>> CreateDefaultsAsync(int? userId)
-        {
-            var tasks = new List<TodoTask>();
-            foreach (var task in Defaults.DefaultTasks)
-            {
-                var result = await CreateAsync(task, userId);
-                if (!result.IsOk)
-                    return DatabaseResults.Error<TodoTask[]>(result.ErrorData);
-
-                tasks.Add((TodoTask)result.Data!);
-            }
-
-            return DatabaseResults.Ok(tasks.ToArray());
         }
 
         private string? EnsureOwnership(TodoTask taskToUpdate, int? userId)

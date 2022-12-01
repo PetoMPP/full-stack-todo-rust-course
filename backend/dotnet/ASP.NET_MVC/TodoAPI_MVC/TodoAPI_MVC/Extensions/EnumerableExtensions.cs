@@ -13,7 +13,8 @@ namespace TodoAPI_MVC.Extensions
             return source.Select(selector).Max() + step;
         }
 
-        public static bool TryGetValueAt<T>(this IList<T> source, int index, [NotNullWhen(true)] out T? value)
+        public static bool TryGetValueAt<T>(
+            this IList<T> source, int index, [NotNullWhen(true)] out T? value)
         {
             if (source.Count <= index)
             {

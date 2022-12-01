@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using TodoAPI_MVC.Database;
 using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Controllers
