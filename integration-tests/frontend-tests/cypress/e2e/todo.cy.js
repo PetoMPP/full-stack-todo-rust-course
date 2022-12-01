@@ -130,7 +130,7 @@ describe("todo app", () => {
         .dget("priority")
         .should("contain", "B")
         .dget("completed")
-        .should("contain", "T")
+        .should("contain", "202")
         .dget("edit")
         .click()
         .dget("completed")
