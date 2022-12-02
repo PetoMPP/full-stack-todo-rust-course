@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using TodoAPI_MVC.Extensions;
+using TodoAPI_MVC.Json;
 using TodoAPI_MVC.Middleware;
 using TodoAPI_MVC.Models;
 
@@ -23,7 +24,8 @@ namespace TodoAPI_MVC
             builder.Services.AddIdentityCore<User>()
                 .AddSignInManager<SignInManager<User>>();
 
-            builder.Services.AddControllers();
+            builder.Services.AddControllers().AddJsonOptions(o =>
+                o.JsonSerializerOptions.PropertyNamingPolicy = SnakeCaseNamingPolicy.SnakeCase);
 
         #if DEBUG
             builder.Services.AddEndpointsApiExplorer();
