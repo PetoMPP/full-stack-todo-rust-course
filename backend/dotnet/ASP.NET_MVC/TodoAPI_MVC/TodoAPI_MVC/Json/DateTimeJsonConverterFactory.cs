@@ -27,20 +27,12 @@ namespace TodoAPI_MVC.Json
 
             public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
-                try
-                {
-                    if (reader.TokenType == JsonTokenType.String)
-                        return DateTime.Parse(reader.GetString()!);
+                if (reader.TokenType == JsonTokenType.String)
+                    return DateTime.Parse(reader.GetString()!);
 
-                    if (reader.TokenType == JsonTokenType.Null)
-                        return null;
-                }
-                catch (Exception error)
-                {
-                    throw new JsonTokenException(
-                        reader.TokenType, error, JsonTokenType.String, JsonTokenType.Null);
-                }
-
+                if (reader.TokenType == JsonTokenType.Null)
+                    return null;
+                
                 throw new JsonTokenException(
                     reader.TokenType, null, JsonTokenType.String, JsonTokenType.Null);
             }
@@ -49,6 +41,7 @@ namespace TodoAPI_MVC.Json
             {
                 if (value is DateTime dateTime)
                     writer.WriteStringValue(dateTime.ToString(Consts.DateFormat));
+
                 else
                     writer.WriteNullValue();
             }
@@ -62,16 +55,8 @@ namespace TodoAPI_MVC.Json
 
             public override DateTime Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
-                try
-                {
-                    if (reader.TokenType == JsonTokenType.String)
-                        return DateTime.Parse(reader.GetString()!);
-                }
-                catch (Exception error)
-                {
-                    throw new JsonTokenException(
-                        reader.TokenType, error, JsonTokenType.String);
-                }
+                if (reader.TokenType == JsonTokenType.String)
+                    return DateTime.Parse(reader.GetString()!);
 
                 throw new JsonTokenException(
                     reader.TokenType, null, JsonTokenType.String);

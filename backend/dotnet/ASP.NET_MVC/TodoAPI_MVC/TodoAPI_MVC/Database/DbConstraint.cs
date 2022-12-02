@@ -11,33 +11,31 @@ namespace TodoAPI_MVC.Database
 
         public DbConstraint(LambdaExpression conditionalExpression)
         {
-            if (conditionalExpression.Body is not BinaryExpression expression)
+            if (conditionalExpression.Body is not BinaryExpression binaryExpression)
                 throw new InvalidOperationException(
                     $"Expression should be of type {nameof(BinaryExpression)}");
 
             _stringBuilder = new StringBuilder();
-            ParseExpression(expression);
+            ParseBinaryExpression(binaryExpression);
         }
 
-        public static implicit operator string(DbConstraint builder) => builder.ToSqlString();
+        public static implicit operator string(DbConstraint constraint) => constraint.ToSqlString();
 
         public string ToSqlString() => _stringBuilder.ToString();
 
-        private void ParseExpression(BinaryExpression property)
+        private void ParseBinaryExpression(BinaryExpression binaryExpression)
         {
-            if (property.Left is BinaryExpression left)
-                ParseExpression(left);
+            if (binaryExpression.Left is BinaryExpression leftBinaryExpression)
+                ParseBinaryExpression(leftBinaryExpression);
 
-            if (property.Left is MemberExpression leftMem)
-                ParseMember(leftMem);
+            if (binaryExpression.Left is MemberExpression leftMemberExpression)
+                ParseMemberExpression(leftMemberExpression);
 
-            if (property.Left is UnaryExpression leftUna)
-            {
-                if (leftUna.Operand is MemberExpression leftNullMem)
-                    ParseMember(leftNullMem);
-            }
+            if (binaryExpression.Left is UnaryExpression leftUnaryExpression)
+                if (leftUnaryExpression.Operand is MemberExpression leftInnerMemberExpression)
+                    ParseMemberExpression(leftInnerMemberExpression);
 
-            var op = property.NodeType switch
+            var logicalOperator = binaryExpression.NodeType switch
             {
                 ExpressionType.Equal => "=",
                 ExpressionType.GreaterThan => ">",
@@ -50,47 +48,48 @@ namespace TodoAPI_MVC.Database
                 _ => "",
             };
 
-            if (!string.IsNullOrEmpty(op))
-                _stringBuilder.Append($" {op} ");
+            if (!string.IsNullOrEmpty(logicalOperator))
+                _stringBuilder.Append($" {logicalOperator} ");
 
-            if (property.Right is BinaryExpression right)
-                ParseExpression(right);
+            if (binaryExpression.Right is BinaryExpression rightBinaryExpression)
+                ParseBinaryExpression(rightBinaryExpression);
 
-            if (property.Right is MemberExpression rightMem)
-            {
-                ParseMember(rightMem);
-            }
-            else if (property.Right is MethodCallExpression rightCall)
-            {
-                var callResult = Expression.Lambda(rightCall).Compile().DynamicInvoke();
-                _stringBuilder.Append(DbHelpers.GetSqlValue(callResult));
-            }
+            if (binaryExpression.Right is MemberExpression rightMemberExpression)
+                ParseMemberExpression(rightMemberExpression);
+
+            if (binaryExpression.Right is MethodCallExpression rightCallExpression)
+                _stringBuilder.Append(DbHelpers.GetSqlValue(
+                    Expression.Lambda(rightCallExpression).Compile().DynamicInvoke()));
         }
 
-        private void ParseMember(MemberExpression memExp)
+        private void ParseMemberExpression(MemberExpression memberExpression)
         {
-            if (memExp.Expression?.NodeType == ExpressionType.Parameter)
+            if (memberExpression.Expression?.NodeType == ExpressionType.Parameter)
             {
-                if (memExp.Member.GetCustomAttribute<DbIgnoreAttribute>() is not null)
+                if (memberExpression.Member.GetCustomAttribute<DbIgnoreAttribute>() is not null)
                     throw new InvalidOperationException("Property has DbIgnoreAttribute!");
 
-                var paramName = memExp.Member.GetCustomAttribute<DbNameAttribute>() is DbNameAttribute nameAtt
-                    ? nameAtt.ColumnName
-                    : memExp.Member.Name;
+                var paramName = memberExpression.Member.GetCustomAttribute<DbNameAttribute>() is DbNameAttribute nameAttribute
+                    ? nameAttribute.ColumnName
+                    : memberExpression.Member.Name;
 
                 _stringBuilder.Append(paramName);
             }
-            else if (memExp.Expression is MemberExpression innerMem)
+            else if (memberExpression.Expression is MemberExpression innerMemberExpression)
             {
-                var prop = (PropertyInfo)memExp.Member;
-                var value = prop.GetValue(Expression.Lambda(innerMem).Compile().DynamicInvoke());
-                _stringBuilder.Append(DbHelpers.GetSqlValue(value));
+                var propertyInfo = (PropertyInfo)memberExpression.Member;
+                var innerMemberValue = propertyInfo.GetValue(Expression.Lambda(innerMemberExpression).Compile().DynamicInvoke());
+                _stringBuilder.Append(DbHelpers.GetSqlValue(innerMemberValue));
             }
-            else if (memExp.Expression is ConstantExpression innerConst)
+            else if (memberExpression.Expression is ConstantExpression innerConstantExpression)
             {
-                var field = (FieldInfo)memExp.Member;
-                var constValue = field.GetValue(Expression.Lambda(innerConst).Compile().DynamicInvoke());
-                _stringBuilder.Append(DbHelpers.GetSqlValue(constValue));
+                var fieldInfo = (FieldInfo)memberExpression.Member;
+                var innerConstantValue = fieldInfo.GetValue(Expression.Lambda(innerConstantExpression).Compile().DynamicInvoke());
+                _stringBuilder.Append(DbHelpers.GetSqlValue(innerConstantValue));
+            }
+            else
+            {
+                throw new InvalidOperationException("Unable to parse MemberExpression");
             }
         }
     }

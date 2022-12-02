@@ -13,30 +13,35 @@ namespace TodoAPI_MVC.Extensions
         {
             if (Environment.GetEnvironmentVariable(Consts.DatabaseModeEnvName) is not string databaseModeString ||
                 !Enum.TryParse<DatabaseMode>(databaseModeString, true, out var databaseMode))
-                throw new InvalidOperationException($"{Consts.DatabaseModeEnvName} is unset!");
-
-            switch (databaseMode)
             {
-                case DatabaseMode.Memory:
-
-                    services.AddSingleton<ITaskData, MemoryTaskData>();
-                    services.AddSingleton<IUserStore<User>, MemoryUserStore>();
-                    return services;
-
-                case DatabaseMode.Postgres:
-
-                    services.AddSingleton<IPostgresDataSource>(
-                        new PostgresDataSource(NpgsqlDataSource.Create(GetPostgresConnectionString())));
-
-                    services.AddSingleton<ITaskData, PostgresTaskData>();
-                    services.AddSingleton<IDatabaseUserStore<User>, PostgresUserStore>();
-                    services.AddSingleton<IUserStore<User>, PostgresUserStore>();
-                    return services;
-
-                default:
-
-                    throw new InvalidOperationException($"{databaseMode} is not valid database mode!");
+                throw new InvalidOperationException($"{Consts.DatabaseModeEnvName} is unset!");
             }
+
+            return databaseMode switch
+            {
+                DatabaseMode.Memory => AddMemoryDbContext(services),
+                DatabaseMode.Postgres => AddPostgresDbContext(services),
+                _ => throw new InvalidOperationException(
+                    $"{databaseMode} is not valid database mode!"),
+            };
+        }
+
+        private static IServiceCollection AddPostgresDbContext(IServiceCollection services)
+        {
+            services.AddSingleton<IPostgresDataSource>(
+                new PostgresDataSource(NpgsqlDataSource.Create(GetPostgresConnectionString())));
+
+            services.AddSingleton<ITaskData, PostgresTaskData>();
+            services.AddSingleton<IDatabaseUserStore<User>, PostgresUserStore>();
+            services.AddSingleton<IUserStore<User>, PostgresUserStore>();
+            return services;
+        }
+
+        private static IServiceCollection AddMemoryDbContext(IServiceCollection services)
+        {
+            services.AddSingleton<ITaskData, MemoryTaskData>();
+            services.AddSingleton<IUserStore<User>, MemoryUserStore>();
+            return services;
         }
 
         private static string GetPostgresConnectionString()

@@ -6,7 +6,9 @@ namespace TodoAPI_MVC.Database.Postgres
 {
     public class PostgresUserStore : IDatabaseUserStore<User>
     {
+        private const string TableName = "users";
         private readonly IPostgresDataSource _dataSource;
+
         private record struct PasswordHash(string Password);
 
         public PostgresUserStore(IPostgresDataSource dataSource)
@@ -18,7 +20,7 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             try
             {
-                await _dataSource.InsertRows("users", new[] {user}, cancellationToken);
+                await _dataSource.InsertRows(TableName, new[] {user}, cancellationToken);
                 return IdentityResult.Success;
             }
             catch (PostgresException error)
@@ -40,7 +42,7 @@ namespace TodoAPI_MVC.Database.Postgres
         public async Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
             var constraint = new DbConstraint((User u) => u.Id == int.Parse(userId));
-            var user = (await _dataSource.ReadRows<User>("users", constraint, cancellationToken))
+            var user = (await _dataSource.ReadRows<User>(TableName, constraint, cancellationToken))
                 .FirstOrDefault();
 
             return user!;
@@ -49,7 +51,7 @@ namespace TodoAPI_MVC.Database.Postgres
         public async Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
             var constraint = new DbConstraint((User u) => u.NormalizedUsername == normalizedUserName);
-            var user = (await _dataSource.ReadRows<User>("users", constraint, cancellationToken))
+            var user = (await _dataSource.ReadRows<User>(TableName, constraint, cancellationToken))
                 .FirstOrDefault();
 
             return user!;
@@ -63,7 +65,7 @@ namespace TodoAPI_MVC.Database.Postgres
         public async Task<string> GetPasswordHashAsync(User user, CancellationToken cancellationToken)
         {
             var constraint = new DbConstraint((User u) => u.Id == user.Id);
-            var hashes = await _dataSource.ReadRows<PasswordHash>("users", constraint, cancellationToken);
+            var hashes = await _dataSource.ReadRows<PasswordHash>(TableName, constraint, cancellationToken);
             return hashes.FirstOrDefault().Password;
         }
 
