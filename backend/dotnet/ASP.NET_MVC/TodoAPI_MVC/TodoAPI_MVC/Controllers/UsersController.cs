@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TodoAPI_MVC.Database;
+using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Models;
 
@@ -12,13 +12,16 @@ namespace TodoAPI_MVC.Controllers
     [Route("api/v1/[controller]")]
     public class UsersController : ApiControllerBase
     {
+        private readonly ITaskData _taskData;
+
         public UsersController(
+            ITaskData taskData,
             IConfiguration config,
             UserManager<User> userManager,
-            SignInManager<User> signInManager,
-            IDatabase database)
-            : base(config, userManager, signInManager, database)
+            SignInManager<User> signInManager)
+            : base(config, userManager, signInManager)
         {
+            _taskData = taskData;
         }
 
         [HttpPost]
@@ -28,8 +31,8 @@ namespace TodoAPI_MVC.Controllers
             var result = await _userManager.CreateAsync(user, dto.Password);
             if (result.Succeeded)
             {
-                var newUser = _userManager.Users.First(u => u.NormalizedUsername == user.NormalizedUsername);
-                await _database.TaskData.CreateDefaultsAsync(newUser.Id);
+                var newUser = await _userManager.FindByNameAsync(user.NormalizedUsername);
+                await ITaskData.CreateDefaultsAsync(_taskData, newUser.Id);
                 newUser.Token = _config.GetToken(newUser);
                 return Ok(newUser);
             }

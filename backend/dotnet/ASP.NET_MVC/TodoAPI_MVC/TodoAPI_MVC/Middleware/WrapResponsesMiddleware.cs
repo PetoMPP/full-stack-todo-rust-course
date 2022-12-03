@@ -61,8 +61,7 @@ namespace TodoAPI_MVC.Middleware
         {
             try
             {
-                obj = JsonSerializer.Deserialize<T>(responseBody, jsonSerializerOptions)
-                    ?? throw new NullReferenceException();
+                obj = JsonSerializer.Deserialize<T>(responseBody, jsonSerializerOptions)!;
 
                 return true;
             }

@@ -1,7 +1,6 @@
-using Microsoft.AspNetCore.Identity;
-using TodoAPI_MVC.Database;
-using TodoAPI_MVC.Database.Memory;
+﻿using Microsoft.AspNetCore.Identity;
 using TodoAPI_MVC.Extensions;
+using TodoAPI_MVC.Json;
 using TodoAPI_MVC.Middleware;
 using TodoAPI_MVC.Models;
 
@@ -12,6 +11,13 @@ namespace TodoAPI_MVC
         public static void Main(string[] args)
         {
             ApplyArgs(args);
+
+        #if DEBUG
+            Environment.SetEnvironmentVariable(Consts.DatabaseModeEnvName, "postgres");
+            Environment.SetEnvironmentVariable(Consts.DatabaseUserEnvName, "postgres");
+            Environment.SetEnvironmentVariable(Consts.DatabasePasswordEnvName, "12345");
+        #endif
+
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
@@ -20,12 +26,16 @@ namespace TodoAPI_MVC
             }));
 
             builder.AddJwtAuthentication();
+            builder.Services.AddDbServiceOptions(
+                new(new Database.Service.SnakeCaseNamingPolicy()));
+
+            builder.Services.AddDatabaseContext();
 
             builder.Services.AddIdentityCore<User>()
                 .AddSignInManager<SignInManager<User>>();
-            builder.Services.AddSingleton<IDatabase, MemoryDatabase>();
-            builder.Services.AddSingleton<IUserStore<User>, MemoryUserStore>();
-            builder.Services.AddControllers();
+
+            builder.Services.AddControllers().AddJsonOptions(o =>
+                o.JsonSerializerOptions.PropertyNamingPolicy = SnakeCaseNamingPolicy.SnakeCase);
 
         #if DEBUG
             builder.Services.AddEndpointsApiExplorer();

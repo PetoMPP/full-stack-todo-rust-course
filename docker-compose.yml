@@ -20,8 +20,10 @@ services:
     ports:
       - "30478:5000"
     environment:
-      - TODO_APP_DB_MODE=${DB_MODE}
-      - TODO_APP_JWT_SECRET=${JWT_SECRET}
+      - DB_MODE=${DB_MODE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
   nodejs-express:
     profiles:
       - nodejs-express
@@ -34,9 +36,9 @@ services:
       - "30478:3000"
     environment:
       - PORT=3000
-      - JWT_SECRET=k${JWT_SECRET}
+      - JWT_SECRET=${JWT_SECRET}
       - SALT_ROUNDS=10
-      - DB_CONNECTION=postgresql://postgres:${DB_PASSWORD}@database
+      - DB_CONNECTION=postgresql://${DB_USER}:${DB_PASSWORD}@database
   rust-yew:
     profiles:
       - rust-yew

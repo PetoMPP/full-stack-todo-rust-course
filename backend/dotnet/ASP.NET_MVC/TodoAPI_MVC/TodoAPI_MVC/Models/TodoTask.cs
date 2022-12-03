@@ -1,16 +1,21 @@
 ﻿using System.Text.Json.Serialization;
+using TodoAPI_MVC.Atributtes;
 using TodoAPI_MVC.Json;
 
 namespace TodoAPI_MVC.Models
 {
     public record struct TodoTask(
+        [property: DbDefault]
         int Id,
         string Title,
         Priority? Priority,
         string? Description,
-        [property: JsonConverter(typeof(DateTimeJsonConverter))]
-        [property: JsonPropertyName("completed_at")]
-        DateTime? CompletedAt)
+        [property: JsonConverter(typeof(DateTimeJsonConverterFactory))]
+        [property: DbDefault]
+        DateTime CreatedAt,
+        [property: JsonConverter(typeof(DateTimeJsonConverterFactory))]
+        DateTime? CompletedAt,
+        int UserId)
     {
         public string? Validate()
         {

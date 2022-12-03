@@ -1,7 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
-using TodoAPI_MVC.Database;
 using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Controllers
@@ -11,18 +10,15 @@ namespace TodoAPI_MVC.Controllers
         protected readonly IConfiguration _config;
         protected readonly UserManager<User> _userManager;
         protected readonly SignInManager<User> _signInManager;
-        protected readonly IDatabase _database;
 
         protected ApiControllerBase(
             IConfiguration config,
             UserManager<User> userManager,
-            SignInManager<User> signInManager,
-            IDatabase database)
+            SignInManager<User> signInManager)
         {
             _config = config;
             _userManager = userManager;
             _signInManager = signInManager;
-            _database = database;
         }
 
         protected async Task<int?> GetCurrentUserId()

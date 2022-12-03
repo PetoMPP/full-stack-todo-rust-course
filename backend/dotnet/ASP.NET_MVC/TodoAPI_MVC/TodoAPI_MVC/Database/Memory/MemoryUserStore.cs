@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Models;
 
@@ -8,8 +9,6 @@ namespace TodoAPI_MVC.Database.Memory
     {
         private readonly List<User> _users = new();
         private readonly Dictionary<string, string> _passwordHashes = new();
-
-        public IQueryable<User> Users => new EnumerableQuery<User>(_users);
 
         public Task<IdentityResult> CreateAsync(User user, CancellationToken cancellationToken)
         {
@@ -26,13 +25,13 @@ namespace TodoAPI_MVC.Database.Memory
         public Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
             var user = _users.FirstOrDefault(u => $"{u.Id}" == userId);
-            return Task.FromResult(user);
+            return Task.FromResult(user)!;
         }
 
         public Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
             var user = _users.FirstOrDefault(u => u.NormalizedUsername == normalizedUserName);
-            return Task.FromResult(user);
+            return Task.FromResult(user)!;
         }
 
         public Task<string> GetNormalizedUserNameAsync(User user, CancellationToken cancellationToken)
@@ -65,6 +64,7 @@ namespace TodoAPI_MVC.Database.Memory
 
         public Task SetNormalizedUserNameAsync(User user, string normalizedName, CancellationToken cancellationToken)
         {
+            user.NormalizedUsername = normalizedName;
             return Task.CompletedTask;
         }
 
