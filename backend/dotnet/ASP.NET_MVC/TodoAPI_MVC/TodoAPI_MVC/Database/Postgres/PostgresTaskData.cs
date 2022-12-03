@@ -20,13 +20,15 @@ namespace TodoAPI_MVC.Database.Postgres
             _const = (e) => new DbConstraint(_dbService, e);
         }
 
-        public async Task<IDatabaseResult<TodoTask>> CreateAsync(TodoTask task, int? userId)
+        public async Task<IDatabaseResult<TodoTask>> CreateAsync(
+            TodoTask task, int? userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 task.UserId = userId ?? throw new ArgumentNullException(nameof(userId));
-                var createdTask = (await _dataSource.InsertRowsReturning(TableName, new[] { task }))
-                    .FirstOrDefault();
+                var createdTask = (await _dataSource.InsertRowsReturning(
+                    TableName, new[] { task }, cancellationToken)).FirstOrDefault();
+
                 return DatabaseResults.Ok(createdTask);
             }
             catch (Exception error)
@@ -35,12 +37,13 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult> DeleteAsync(int id, int? userId)
+        public async Task<IDatabaseResult> DeleteAsync(
+            int id, int? userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
-                if (await _dataSource.DeleteRows(TableName, constraint) == 0)
+                if (await _dataSource.DeleteRows(TableName, constraint, cancellationToken) == 0)
                     return DatabaseResults.Error("Task not found!");
 
                 return DatabaseResults.Ok();
@@ -51,12 +54,15 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(int? userId)
+        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(
+            int? userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var constraint = _const((TodoTask t) => t.UserId == userId);
-                var tasks = await _dataSource.ReadRows<TodoTask>(TableName, constraint);
+                var tasks = await _dataSource.ReadRows<TodoTask>(
+                    TableName, constraint, cancellationToken);
+
                 return DatabaseResults.Ok(tasks.ToArray());
             }
             catch (Exception error)
@@ -65,12 +71,15 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask>> GetAsync(int id, int? userId)
+        public async Task<IDatabaseResult<TodoTask>> GetAsync(
+            int id, int? userId, CancellationToken cancellationToken = default)
         {
             try
             {
                 var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
-                var tasks = await _dataSource.ReadRows<TodoTask>(TableName, constraint);
+                var tasks = await _dataSource.ReadRows<TodoTask>(
+                    TableName, constraint, cancellationToken);
+
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
@@ -82,22 +91,25 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask>> ToggleCompletedAsync(int id, int? userId)
+        public async Task<IDatabaseResult<TodoTask>> ToggleCompletedAsync(
+            int id, int? userId, CancellationToken cancellationToken = default)
         {
             try
             {
-                var commandString = """
+                var commandString = $"""
                     UPDATE tasks 
                         SET completed_at = 
                         CASE
                             WHEN completed_at is NULL THEN CURRENT_TIMESTAMP
                             ELSE NULL
                         END
-                    WHERE id = 1
+                    WHERE {_const((TodoTask t) => t.Id == id && t.UserId == userId)}
                     RETURNING *
                     """;
 
-                var tasks = await _dataSource.ExecuteQuery<TodoTask>(commandString);
+                var tasks = await _dataSource.ExecuteQuery<TodoTask>(
+                    commandString, cancellationToken);
+
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
@@ -109,7 +121,8 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask>> UpdateAsync(int id, TodoTask task, int? userId)
+        public async Task<IDatabaseResult<TodoTask>> UpdateAsync(
+            int id, TodoTask task, int? userId, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -122,7 +135,10 @@ namespace TodoAPI_MVC.Database.Postgres
                 task.UserId = (int)userId;
 
                 var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
-                var tasks = await _dataSource.UpdateRowsReturning(TableName, task, constraint);
+
+                var tasks = await _dataSource.UpdateRowsReturning(
+                    TableName, task, constraint, cancellationToken);
+
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 

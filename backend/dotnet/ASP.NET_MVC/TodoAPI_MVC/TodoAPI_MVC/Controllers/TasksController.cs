@@ -25,39 +25,47 @@ namespace TodoAPI_MVC.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> Create(TodoTask newTask)
+        public async Task<IActionResult> Create(
+            TodoTask newTask, CancellationToken cancellationToken)
         {
-            return (await _taskData.CreateAsync(newTask, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.CreateAsync(newTask, await GetCurrentUserId(), cancellationToken))
+                .ToIActionResult(this);
         }
 
         [HttpGet("{id:int}")]
-        public async Task<IActionResult> Get(int id)
+        public async Task<IActionResult> Get(int id, CancellationToken cancellationToken)
         {
-            return (await _taskData.GetAsync(id, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.GetAsync(id, await GetCurrentUserId(), cancellationToken))
+                .ToIActionResult(this);
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll()
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
         {
-            return (await _taskData.GetAllAsync(await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.GetAllAsync(await GetCurrentUserId(), cancellationToken))
+                .ToIActionResult(this);
         }
 
         [HttpPatch("{id:int}")]
-        public async Task<IActionResult> Update(int id, TodoTask updatedTask)
+        public async Task<IActionResult> Update(
+            int id, TodoTask updatedTask, CancellationToken cancellationToken)
         {
-            return (await _taskData.UpdateAsync(id, updatedTask, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.UpdateAsync(id, updatedTask, await GetCurrentUserId(), cancellationToken))
+                .ToIActionResult(this);
         }
 
         [HttpPatch("{id:int}/toggle-completed")]
-        public async Task<IActionResult> ToggleCompleted(int id)
+        public async Task<IActionResult> ToggleCompleted(int id, CancellationToken cancellationToken)
         {
-            return (await _taskData.ToggleCompletedAsync(id, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.ToggleCompletedAsync(id, await GetCurrentUserId(), cancellationToken))
+                .ToIActionResult(this);
         }
 
         [HttpDelete("{id:int}")]
-        public async Task<IActionResult> Delete(int id)
+        public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
         {
-            return (await _taskData.DeleteAsync(id, await GetCurrentUserId())).ToIActionResult(this);
+            return (await _taskData.DeleteAsync(id, await GetCurrentUserId(), cancellationToken))
+                .ToIActionResult(this);
         }
     }
 }

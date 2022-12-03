@@ -9,7 +9,8 @@ namespace TodoAPI_MVC.Database.Memory
         private readonly List<TodoTask> _tasks = new();
         private readonly Dictionary<int, int> _taskOwners = new();
 
-        public Task<IDatabaseResult<TodoTask>> CreateAsync(TodoTask task, int? userId)
+        public Task<IDatabaseResult<TodoTask>> CreateAsync(
+            TodoTask task, int? userId, CancellationToken _ = default)
         {
             var validationError = task.Validate();
             if (validationError is string error)
@@ -25,7 +26,8 @@ namespace TodoAPI_MVC.Database.Memory
             return Task.FromResult(DatabaseResults.Ok(task));
         }
 
-        public Task<IDatabaseResult<TodoTask>> UpdateAsync(int id, TodoTask task, int? userId)
+        public Task<IDatabaseResult<TodoTask>> UpdateAsync(
+            int id, TodoTask task, int? userId, CancellationToken _ = default)
         {
             var validationError = task.Validate();
             if (validationError is string error)
@@ -47,7 +49,8 @@ namespace TodoAPI_MVC.Database.Memory
             return Task.FromResult(DatabaseResults.Ok(taskToUpdate));
         }
 
-        public Task<IDatabaseResult> DeleteAsync(int id, int? userId)
+        public Task<IDatabaseResult> DeleteAsync(
+            int id, int? userId, CancellationToken _ = default)
         {
             if (!_tasks.Any(t => t.Id == id))
                 return Task.FromResult(DatabaseResults.Error("Task not found!"));
@@ -62,7 +65,8 @@ namespace TodoAPI_MVC.Database.Memory
             return Task.FromResult(DatabaseResults.Ok());
         }
 
-        public Task<IDatabaseResult<TodoTask[]>> GetAllAsync(int? userId)
+        public Task<IDatabaseResult<TodoTask[]>> GetAllAsync(
+            int? userId, CancellationToken _ = default)
         {
             if (userId is not int id)
                 return Task.FromResult(DatabaseResults.Error<TodoTask[]>("Invalid user!"));
@@ -72,7 +76,8 @@ namespace TodoAPI_MVC.Database.Memory
                 _tasks.Where(t => ownedTasksIds.Any(i => i == t.Id)).ToArray()));
         }
 
-        public Task<IDatabaseResult<TodoTask>> ToggleCompletedAsync(int id, int? userId)
+        public Task<IDatabaseResult<TodoTask>> ToggleCompletedAsync(
+            int id, int? userId, CancellationToken _ = default)
         {
             var taskIndex = _tasks.FindIndex(0, t => t.Id == id);
             if (taskIndex < 0)
@@ -93,7 +98,8 @@ namespace TodoAPI_MVC.Database.Memory
             return Task.FromResult(DatabaseResults.Ok(task));
         }
 
-        public Task<IDatabaseResult<TodoTask>> GetAsync(int id, int? userId)
+        public Task<IDatabaseResult<TodoTask>> GetAsync(
+            int id, int? userId, CancellationToken _ = default)
         {
             var taskIndex = _tasks.FindIndex(t => t.Id == id);
             if (taskIndex < 0)
