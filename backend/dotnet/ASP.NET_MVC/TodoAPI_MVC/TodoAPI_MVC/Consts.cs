@@ -3,7 +3,7 @@
     public class Consts
     {
         // Formats
-        public const string DateFormat = "yyyy-MM-dd hh:mm:ss.fff K";
+        public const string DateFormat = "yyyy-MM-dd HH:mm:ss.fff K";
 
         // Environment variables
         public const string DatabaseModeEnvName = "DB_MODE";
