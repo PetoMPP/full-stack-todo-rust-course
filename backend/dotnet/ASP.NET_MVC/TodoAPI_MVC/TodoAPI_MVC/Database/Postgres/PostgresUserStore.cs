@@ -1,5 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Npgsql;
+using System.Linq.Expressions;
+using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Database.Postgres
@@ -8,12 +10,18 @@ namespace TodoAPI_MVC.Database.Postgres
     {
         private const string TableName = "users";
         private readonly IPostgresDataSource _dataSource;
+        private readonly IDbService _dbService;
+        private readonly Func<LambdaExpression, DbConstraint> _const;
 
         private record struct PasswordHash(string Password);
 
-        public PostgresUserStore(IPostgresDataSource dataSource)
+        public PostgresUserStore(
+            IPostgresDataSource dataSource,
+            IDbService dbService)
         {
             _dataSource = dataSource;
+            _dbService = dbService;
+            _const = (e) => new DbConstraint(_dbService, e);
         }
 
         public async Task<IdentityResult> CreateAsync(User user, CancellationToken cancellationToken)
@@ -41,7 +49,7 @@ namespace TodoAPI_MVC.Database.Postgres
 
         public async Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
-            var constraint = new DbConstraint((User u) => u.Id == int.Parse(userId));
+            var constraint = _const((User u) => u.Id == int.Parse(userId));
             var user = (await _dataSource.ReadRows<User>(TableName, constraint, cancellationToken))
                 .FirstOrDefault();
 
@@ -50,7 +58,7 @@ namespace TodoAPI_MVC.Database.Postgres
 
         public async Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
-            var constraint = new DbConstraint((User u) => u.NormalizedUsername == normalizedUserName);
+            var constraint = _const((User u) => u.NormalizedUsername == normalizedUserName);
             var user = (await _dataSource.ReadRows<User>(TableName, constraint, cancellationToken))
                 .FirstOrDefault();
 
@@ -64,7 +72,7 @@ namespace TodoAPI_MVC.Database.Postgres
 
         public async Task<string> GetPasswordHashAsync(User user, CancellationToken cancellationToken)
         {
-            var constraint = new DbConstraint((User u) => u.Id == user.Id);
+            var constraint = _const((User u) => u.Id == user.Id);
             var hashes = await _dataSource.ReadRows<PasswordHash>(TableName, constraint, cancellationToken);
             return hashes.FirstOrDefault().Password;
         }

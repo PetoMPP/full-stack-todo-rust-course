@@ -1,20 +1,24 @@
 ﻿using System.Linq.Expressions;
 using System.Reflection;
 using System.Text;
-using TodoAPI_MVC.Atributtes;
+using TodoAPI_MVC.Database.Interfaces;
 
 namespace TodoAPI_MVC.Database
 {
     public class DbConstraint
     {
         internal readonly StringBuilder _stringBuilder;
+        private string _logicalOperator;
+        private readonly IDbService _dbService;
 
-        public DbConstraint(LambdaExpression conditionalExpression)
+        public DbConstraint(IDbService dbService, LambdaExpression conditionalExpression)
         {
             if (conditionalExpression.Body is not BinaryExpression binaryExpression)
                 throw new InvalidOperationException(
                     $"Expression should be of type {nameof(BinaryExpression)}");
 
+            _logicalOperator = "";
+            _dbService = dbService;
             _stringBuilder = new StringBuilder();
             ParseBinaryExpression(binaryExpression);
         }
@@ -35,7 +39,7 @@ namespace TodoAPI_MVC.Database
                 if (leftUnaryExpression.Operand is MemberExpression leftInnerMemberExpression)
                     ParseMemberExpression(leftInnerMemberExpression);
 
-            var logicalOperator = binaryExpression.NodeType switch
+            _logicalOperator = binaryExpression.NodeType switch
             {
                 ExpressionType.Equal => "=",
                 ExpressionType.GreaterThan => ">",
@@ -48,8 +52,8 @@ namespace TodoAPI_MVC.Database
                 _ => "",
             };
 
-            if (!string.IsNullOrEmpty(logicalOperator))
-                _stringBuilder.Append($" {logicalOperator} ");
+            if (!string.IsNullOrEmpty(_logicalOperator))
+                _stringBuilder.Append($" {_logicalOperator} ");
 
             if (binaryExpression.Right is BinaryExpression rightBinaryExpression)
                 ParseBinaryExpression(rightBinaryExpression);
@@ -57,39 +61,87 @@ namespace TodoAPI_MVC.Database
             if (binaryExpression.Right is MemberExpression rightMemberExpression)
                 ParseMemberExpression(rightMemberExpression);
 
+            if (binaryExpression.Right is ConstantExpression rightConstantExpression)
+                ParseConstantExpression(rightConstantExpression);
+
             if (binaryExpression.Right is MethodCallExpression rightCallExpression)
-                _stringBuilder.Append(DbHelpers.GetSqlValue(
-                    Expression.Lambda(rightCallExpression).Compile().DynamicInvoke()));
+                ParseMethodCallExpression(rightCallExpression);
+
+            if (binaryExpression.Right is UnaryExpression rightUnaryExpression)
+            {
+                if (rightUnaryExpression.Operand is MemberExpression rightInnerMemberExpression)
+                    ParseMemberExpression(rightInnerMemberExpression);
+
+                if (rightUnaryExpression.Operand is MethodCallExpression rightInnerCallExpression)
+                    ParseMethodCallExpression(rightInnerCallExpression);
+            }
+        }
+
+        private void ParseMethodCallExpression(MethodCallExpression rightCallExpression)
+        {
+            _stringBuilder.Append(_dbService.GetSqlValue(
+                Expression.Lambda(rightCallExpression).Compile().DynamicInvoke()));
+        }
+
+        private void ParseConstantExpression(ConstantExpression constantExpression)
+        {
+            ValidateOperator(constantExpression.Value);
+            _stringBuilder.Append(_dbService.GetSqlValue(constantExpression.Value));
         }
 
         private void ParseMemberExpression(MemberExpression memberExpression)
         {
             if (memberExpression.Expression?.NodeType == ExpressionType.Parameter)
             {
-                if (memberExpression.Member.GetCustomAttribute<DbIgnoreAttribute>() is not null)
-                    throw new InvalidOperationException("Property has DbIgnoreAttribute!");
-
-                var paramName = memberExpression.Member.GetCustomAttribute<DbNameAttribute>() is DbNameAttribute nameAttribute
-                    ? nameAttribute.ColumnName
-                    : memberExpression.Member.Name;
+                if (!_dbService.TryGetSqlName(
+                    memberExpression.Member, false, out var paramName, out var attributeName))
+                {
+                    throw new InvalidOperationException($"Property has {attributeName}!");
+                }
 
                 _stringBuilder.Append(paramName);
             }
             else if (memberExpression.Expression is MemberExpression innerMemberExpression)
             {
                 var propertyInfo = (PropertyInfo)memberExpression.Member;
-                var innerMemberValue = propertyInfo.GetValue(Expression.Lambda(innerMemberExpression).Compile().DynamicInvoke());
-                _stringBuilder.Append(DbHelpers.GetSqlValue(innerMemberValue));
+                var innerMemberValue = propertyInfo.GetValue(
+                    Expression.Lambda(innerMemberExpression).Compile().DynamicInvoke());
+
+                ValidateOperator(innerMemberValue);
+                _stringBuilder.Append(_dbService.GetSqlValue(innerMemberValue));
             }
             else if (memberExpression.Expression is ConstantExpression innerConstantExpression)
             {
                 var fieldInfo = (FieldInfo)memberExpression.Member;
-                var innerConstantValue = fieldInfo.GetValue(Expression.Lambda(innerConstantExpression).Compile().DynamicInvoke());
-                _stringBuilder.Append(DbHelpers.GetSqlValue(innerConstantValue));
+                var innerConstantValue = fieldInfo.GetValue(
+                    Expression.Lambda(innerConstantExpression).Compile().DynamicInvoke());
+
+                ValidateOperator(innerConstantValue);
+                _stringBuilder.Append(_dbService.GetSqlValue(innerConstantValue));
             }
             else
             {
-                throw new InvalidOperationException("Unable to parse MemberExpression");
+                throw new InvalidOperationException("Unable to parse MemberExpression!");
+            }
+        }
+
+        private void ValidateOperator(object? nextValue)
+        {
+            if (nextValue is null)
+            {
+                switch (_logicalOperator)
+                {
+                    case "=":
+                        _stringBuilder.Length -= 3;
+                        _stringBuilder.Append(" is ");
+                        break;
+                    case "!=":
+                        _stringBuilder.Length -= 4;
+                        _stringBuilder.Append(" is not ");
+                        break;
+                    default:
+                        break;
+                }
             }
         }
     }

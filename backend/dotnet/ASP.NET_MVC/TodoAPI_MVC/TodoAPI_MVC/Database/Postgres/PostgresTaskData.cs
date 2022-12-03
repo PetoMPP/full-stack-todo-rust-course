@@ -1,4 +1,6 @@
-﻿using TodoAPI_MVC.Models;
+﻿using System.Linq.Expressions;
+using TodoAPI_MVC.Database.Interfaces;
+using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Database.Postgres
 {
@@ -6,10 +8,16 @@ namespace TodoAPI_MVC.Database.Postgres
     {
         private const string TableName = "tasks";
         private readonly IPostgresDataSource _dataSource;
+        private readonly IDbService _dbService;
+        private readonly Func<LambdaExpression, DbConstraint> _const;
 
-        public PostgresTaskData(IPostgresDataSource dataSource)
+        public PostgresTaskData(
+            IPostgresDataSource dataSource,
+            IDbService dbService)
         {
             _dataSource = dataSource;
+            _dbService = dbService;
+            _const = (e) => new DbConstraint(_dbService, e);
         }
 
         public async Task<IDatabaseResult<TodoTask?>> CreateAsync(TodoTask task, int? userId)
@@ -31,7 +39,7 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             try
             {
-                var constraint = new DbConstraint((TodoTask t) => t.Id == id && t.UserId == userId);
+                var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
                 if (await _dataSource.DeleteRows(TableName, constraint) == 0)
                     return DatabaseResults.Error("Task not found!");
 
@@ -47,7 +55,7 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             try
             {
-                var constraint = new DbConstraint((TodoTask t) => t.UserId == userId);
+                var constraint = _const((TodoTask t) => t.UserId == userId);
                 var tasks = await _dataSource.ReadRows<TodoTask>(TableName, constraint);
                 return DatabaseResults.Ok<TodoTask[]?>(tasks.ToArray());
             }
@@ -61,7 +69,7 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             try
             {
-                var constraint = new DbConstraint((TodoTask t) => t.Id == id && t.UserId == userId);
+                var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
                 var tasks = await _dataSource.ReadRows<TodoTask>(TableName, constraint);
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask?>("Task not found!");
@@ -113,7 +121,7 @@ namespace TodoAPI_MVC.Database.Postgres
 
                 task.UserId = (int)userId;
 
-                var constraint = new DbConstraint((TodoTask t) => t.Id == id && t.UserId == userId);
+                var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
                 var tasks = await _dataSource.UpdateRowsReturning(TableName, task, constraint);
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask?>("Task not found!");

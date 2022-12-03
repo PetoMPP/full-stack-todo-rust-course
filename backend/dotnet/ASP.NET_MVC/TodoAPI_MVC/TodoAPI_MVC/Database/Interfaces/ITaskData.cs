@@ -1,6 +1,6 @@
 ﻿using TodoAPI_MVC.Models;
 
-namespace TodoAPI_MVC.Database
+namespace TodoAPI_MVC.Database.Interfaces
 {
     public interface ITaskData
     {

@@ -3,14 +3,12 @@ using Npgsql.Schema;
 using System.Collections.ObjectModel;
 using System.Reflection;
 using System.Text;
-using TodoAPI_MVC.Atributtes;
+using TodoAPI_MVC.Database.Interfaces;
 
-namespace TodoAPI_MVC.Database
+namespace TodoAPI_MVC.Database.Postgres
 {
     public interface IPostgresDataSource
     {
-        NpgsqlDataSource NpgsqlDataSource { get; }
-
         Task<int> DeleteRows(string tableName, string? sqlFilter = null, CancellationToken cancellationToken = default);
         Task<int> Execute(string commandString, CancellationToken cancellationToken = default);
         Task<IList<T>> ExecuteQuery<T>(string commandString, CancellationToken cancellationToken = default);
@@ -23,18 +21,20 @@ namespace TodoAPI_MVC.Database
 
     public class PostgresDataSource : IPostgresDataSource
     {
+        private readonly NpgsqlDataSource _npgsqlDataSource;
+        private readonly IDbService _dbService;
+
         private record struct PropertyData(PropertyInfo PropertyInfo, string SqlName);
 
-        public NpgsqlDataSource NpgsqlDataSource { get; }
-
-        public PostgresDataSource(NpgsqlDataSource npgsqlDataSource)
+        public PostgresDataSource(NpgsqlDataSource npgsqlDataSource, IDbService dbService)
         {
-            NpgsqlDataSource = npgsqlDataSource;
+            _npgsqlDataSource = npgsqlDataSource;
+            _dbService = dbService;
         }
 
         public async Task<int> Execute(string commandString, CancellationToken cancellationToken)
         {
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -46,7 +46,7 @@ namespace TodoAPI_MVC.Database
             if (!propertiesData.Any())
                 throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
 
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
             return await ReadValues<T>(reader, propertiesData, cancellationToken);
         }
@@ -57,7 +57,7 @@ namespace TodoAPI_MVC.Database
             CancellationToken cancellationToken = default)
         {
             var commandString = CreateDeleteCommandString(tableName, sqlFilter);
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -76,7 +76,7 @@ namespace TodoAPI_MVC.Database
             var columnNames = propertiesData.Select(p => p.SqlName);
             var commandString = CreateUpdateCommandString(tableName, propertiesData, value, sqlFilter, false);
 
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -95,7 +95,7 @@ namespace TodoAPI_MVC.Database
             var columnNames = propertiesData.Select(p => p.SqlName);
             var commandString = CreateUpdateCommandString(tableName, propertiesData, value, sqlFilter, true);
 
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
             return await ReadValues<T>(reader, propertiesData, cancellationToken);
         }
@@ -114,7 +114,7 @@ namespace TodoAPI_MVC.Database
             var columnNames = propertiesData.Select(p => p.SqlName);
             var commandString = CreateInsertCommandString(tableName, propertiesData, values, true);
 
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
             return await ReadValues<T>(reader, propertiesData, cancellationToken);
         }
@@ -133,7 +133,7 @@ namespace TodoAPI_MVC.Database
             var columnNames = propertiesData.Select(p => p.SqlName);
             var commandString = CreateInsertCommandString(tableName, propertiesData, values, false);
 
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -151,7 +151,7 @@ namespace TodoAPI_MVC.Database
             var columnNames = propertiesData.Select(p => p.SqlName);
             var commandString = CreateSelectCommandString(tableName, sqlFilter, columnNames);
 
-            using var command = NpgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(commandString);
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
             return await ReadValues<T>(reader, propertiesData, cancellationToken);
         }
@@ -202,11 +202,14 @@ namespace TodoAPI_MVC.Database
             return command;
         }
 
-        private static string CreateUpdateCommandString<T>(
+        private string CreateUpdateCommandString<T>(
             string tableName, IEnumerable<PropertyData> propertiesData, T value, string? sqlFilter, bool returning)
         {
             var builder = new StringBuilder();
-            var setterString = string.Join(", ", propertiesData.Select(p => $"{p.SqlName} = {DbHelpers.GetSqlValue(p.PropertyInfo.GetValue(value))}"));
+            var setterString = string.Join(
+                ", ", propertiesData.Select(p => 
+                    $"{p.SqlName} = {_dbService.GetSqlValue(p.PropertyInfo.GetValue(value))}"));
+
             builder.Append($"UPDATE {tableName} SET {setterString}");
 
             if (sqlFilter is not null)
@@ -218,7 +221,7 @@ namespace TodoAPI_MVC.Database
             return builder.ToString();
         }
 
-        private static string CreateInsertCommandString<T>(
+        private string CreateInsertCommandString<T>(
             string tableName, IEnumerable<PropertyData> propertiesData, IEnumerable<T> values, bool returning)
         {
             var columnNames = propertiesData.Select(p => p.SqlName);
@@ -227,7 +230,7 @@ namespace TodoAPI_MVC.Database
             builder.Append("VALUES ");
 
             foreach (var value in values)
-                builder.Append($"({string.Join(", ", propertiesData.Select(p => DbHelpers.GetSqlValue(p.PropertyInfo.GetValue(value))))}),");
+                builder.Append($"({string.Join(", ", propertiesData.Select(p => _dbService.GetSqlValue(p.PropertyInfo.GetValue(value))))}),");
 
             builder.Length--;
 
@@ -237,26 +240,15 @@ namespace TodoAPI_MVC.Database
             return builder.ToString();
         }
 
-        private static IEnumerable<PropertyData> GetPropertiesData(
+        private IEnumerable<PropertyData> GetPropertiesData(
             IEnumerable<PropertyInfo> properties, bool skipDefaultProperties)
         {
             foreach (var property in properties)
             {
-                if (property.GetCustomAttribute<DbIgnoreAttribute>() is not null)
+                if (!_dbService.TryGetSqlName(property, skipDefaultProperties, out var sqlName, out _))
                     continue;
 
-                if (skipDefaultProperties)
-                    if (property.GetCustomAttribute<DbDefaultAttribute>() is not null)
-                        continue;
-
-                if (property.GetCustomAttribute<DbNameAttribute>() is DbNameAttribute attribute &&
-                    !string.IsNullOrWhiteSpace(attribute.ColumnName))
-                {
-                    yield return new PropertyData(property, attribute.ColumnName);
-                    continue;
-                }
-
-                yield return new PropertyData(property, property.Name);
+                yield return new PropertyData(property, sqlName);
             }
         }
 

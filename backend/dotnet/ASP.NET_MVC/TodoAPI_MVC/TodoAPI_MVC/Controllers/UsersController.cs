@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using TodoAPI_MVC.Database;
+using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Models;
 

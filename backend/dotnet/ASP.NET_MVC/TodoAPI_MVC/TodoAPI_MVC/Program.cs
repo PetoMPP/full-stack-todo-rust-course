@@ -19,6 +19,9 @@ namespace TodoAPI_MVC
             }));
 
             builder.AddJwtAuthentication();
+            builder.Services.AddDbServiceOptions(
+                new(new Database.Service.SnakeCaseNamingPolicy()));
+
             builder.Services.AddDatabaseContext();
 
             builder.Services.AddIdentityCore<User>()

@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Npgsql;
-using TodoAPI_MVC.Database;
+using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Database.Memory;
 using TodoAPI_MVC.Database.Postgres;
+using TodoAPI_MVC.Database.Service;
 using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Extensions
@@ -26,10 +27,19 @@ namespace TodoAPI_MVC.Extensions
             };
         }
 
+        public static IServiceCollection AddDbServiceOptions(
+            this IServiceCollection services,
+            DbServiceOptions options)
+        {
+            services.AddSingleton(options);
+            return services;
+        }
+
         private static IServiceCollection AddPostgresDbContext(IServiceCollection services)
         {
-            services.AddSingleton<IPostgresDataSource>(
-                new PostgresDataSource(NpgsqlDataSource.Create(GetPostgresConnectionString())));
+            services.AddSingleton<IDbService, DbService>();
+            services.AddSingleton(NpgsqlDataSource.Create(GetPostgresConnectionString()));
+            services.AddSingleton<IPostgresDataSource, PostgresDataSource>();
 
             services.AddSingleton<ITaskData, PostgresTaskData>();
             services.AddSingleton<IDatabaseUserStore<User>, PostgresUserStore>();
