@@ -11,15 +11,10 @@ namespace TodoAPI_MVC.Models
         Priority? Priority,
         string? Description,
         [property: JsonConverter(typeof(DateTimeJsonConverterFactory))]
-        [property: JsonPropertyName("created_at")]
-        [property: DbName("created_at")]
         [property: DbDefault]
         DateTime CreatedAt,
         [property: JsonConverter(typeof(DateTimeJsonConverterFactory))]
-        [property: JsonPropertyName("completed_at")]
-        [property: DbName("completed_at")]
         DateTime? CompletedAt,
-        [property: DbName("user_id")]
         int UserId)
     {
         public string? Validate()

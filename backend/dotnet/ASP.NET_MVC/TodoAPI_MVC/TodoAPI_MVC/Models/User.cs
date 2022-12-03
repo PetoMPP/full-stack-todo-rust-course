@@ -9,7 +9,6 @@ namespace TodoAPI_MVC.Models
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
 
-        [DbName("normalized_username")]
         [JsonIgnore]
         public string NormalizedUsername { get; set; } = string.Empty;
 
