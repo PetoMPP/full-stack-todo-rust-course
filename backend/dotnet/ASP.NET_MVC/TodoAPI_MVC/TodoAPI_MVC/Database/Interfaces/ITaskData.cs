@@ -4,12 +4,12 @@ namespace TodoAPI_MVC.Database.Interfaces
 {
     public interface ITaskData
     {
-        Task<IDatabaseResult<TodoTask?>> CreateAsync(TodoTask task, int? userId);
+        Task<IDatabaseResult<TodoTask>> CreateAsync(TodoTask task, int? userId);
         Task<IDatabaseResult> DeleteAsync(int id, int? userId);
-        Task<IDatabaseResult<TodoTask?>> GetAsync(int id, int? userId);
-        Task<IDatabaseResult<TodoTask[]?>> GetAllAsync(int? userId);
-        Task<IDatabaseResult<TodoTask?>> ToggleCompletedAsync(int id, int? userId);
-        Task<IDatabaseResult<TodoTask?>> UpdateAsync(int id, TodoTask task, int? userId);
+        Task<IDatabaseResult<TodoTask>> GetAsync(int id, int? userId);
+        Task<IDatabaseResult<TodoTask[]>> GetAllAsync(int? userId);
+        Task<IDatabaseResult<TodoTask>> ToggleCompletedAsync(int id, int? userId);
+        Task<IDatabaseResult<TodoTask>> UpdateAsync(int id, TodoTask task, int? userId);
 
         static async Task<IDatabaseResult<TodoTask[]>> CreateDefaultsAsync(ITaskData taskData, int? userId)
         {
