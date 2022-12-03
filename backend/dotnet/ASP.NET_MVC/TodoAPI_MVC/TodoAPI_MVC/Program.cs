@@ -11,6 +11,13 @@ namespace TodoAPI_MVC
         public static void Main(string[] args)
         {
             ApplyArgs(args);
+
+        #if DEBUG
+            Environment.SetEnvironmentVariable(Consts.DatabaseModeEnvName, "postgres");
+            Environment.SetEnvironmentVariable(Consts.DatabaseUserEnvName, "postgres");
+            Environment.SetEnvironmentVariable(Consts.DatabasePasswordEnvName, "12345");
+        #endif
+
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
