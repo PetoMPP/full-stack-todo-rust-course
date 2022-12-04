@@ -25,6 +25,10 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             try
             {
+                var validationError = task.Validate();
+                if (validationError is string error)
+                    return DatabaseResults.Error<TodoTask>(error);
+
                 task.UserId = userId ?? throw new ArgumentNullException(nameof(userId));
                 var createdTask = (await _dataSource.InsertRowsReturning(
                     TableName, new[] { task }, cancellationToken)).FirstOrDefault();
@@ -131,6 +135,10 @@ namespace TodoAPI_MVC.Database.Postgres
 
                 if (userId is null)
                     return DatabaseResults.Error<TodoTask>("Task not found!");
+
+                var validationError = task.Validate();
+                if (validationError is string error)
+                    return DatabaseResults.Error<TodoTask>(error);
 
                 task.UserId = (int)userId;
 
