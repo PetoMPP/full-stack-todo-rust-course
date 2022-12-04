@@ -19,12 +19,21 @@ namespace TodoAPI_MVC.Database.Service
 
         public string GetSqlValue(object? value)
         {
+            var valueType = value?.GetType();
+            if (valueType?.GetCustomAttribute<DbValueConverterAttribute>() is DbValueConverterAttribute convAttr)
+            {
+                var converter = (DbValueConverter)Activator.CreateInstance(convAttr.ConverterType)!;
+                return converter.Convert(value);
+            }
+
             if (value is null)
                 return "null";
-            if (value is string or char or Enum)
+            if (value is string or char)
                 return $"'{value}'";
             if (value is DateTime dateTime)
                 return $"'{dateTime.ToString(Consts.DateFormat)}'";
+            if (valueType?.IsEnum == true)
+                return $"{(int)value}";
 
             return value.ToString() ?? string.Empty;
         }
