@@ -3,12 +3,13 @@ using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Json;
 using TodoAPI_MVC.Middleware;
 using TodoAPI_MVC.Models;
+using TodoAPI_MVC.Services;
 
 namespace TodoAPI_MVC
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             ApplyArgs(args);
 
@@ -16,6 +17,8 @@ namespace TodoAPI_MVC
             Environment.SetEnvironmentVariable(Consts.DatabaseModeEnvName, "postgres");
             Environment.SetEnvironmentVariable(Consts.DatabaseUserEnvName, "postgres");
             Environment.SetEnvironmentVariable(Consts.DatabasePasswordEnvName, "12345");
+            Environment.SetEnvironmentVariable(Consts.ApiAdminUserEnvName, "admin");
+            Environment.SetEnvironmentVariable(Consts.ApiAdminPasswordEnvName, "Adm1n!");
         #endif
 
             var builder = WebApplication.CreateBuilder(args);
@@ -30,8 +33,10 @@ namespace TodoAPI_MVC
                 new(new Database.Service.SnakeCaseNamingPolicy()));
 
             builder.Services.AddDatabaseContext();
+            builder.Services.AddScoped<DatabaseInitializor>();
 
             builder.Services.AddIdentityCore<User>()
+                .AddUserManager<UserManager<User>>()
                 .AddSignInManager<SignInManager<User>>();
 
             builder.Services.AddControllers().AddJsonOptions(o =>
@@ -55,6 +60,9 @@ namespace TodoAPI_MVC
             app.UseAuthorization();
             app.MapControllers();
             app.UseResponseWrapper();
+
+            var databaseInitializor = app.Services.CreateScope().ServiceProvider.GetRequiredService<DatabaseInitializor>();
+            await databaseInitializor.StartAsync(CancellationToken.None);
 
             app.Run();
         }

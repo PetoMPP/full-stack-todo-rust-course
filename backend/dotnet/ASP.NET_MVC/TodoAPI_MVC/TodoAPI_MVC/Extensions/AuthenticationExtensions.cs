@@ -25,6 +25,7 @@ namespace TodoAPI_MVC.Extensions
                 Subject = new ClaimsIdentity(new[]
                 {
                     new Claim("Id", $"{user.Id}"),
+                    new Claim("Access", $"{(int)user.Access}"),
                     new Claim(JwtRegisteredClaimNames.Sub, user.Username),
                     new Claim(JwtRegisteredClaimNames.Email, user.Username),
                     new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())

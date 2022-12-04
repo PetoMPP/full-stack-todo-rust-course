@@ -7,6 +7,7 @@ namespace TodoAPI_MVC.Models
     {
         [DbDefault]
         public int Id { get; set; }
+
         public string Username { get; set; } = string.Empty;
 
         [JsonIgnore]
@@ -17,5 +18,7 @@ namespace TodoAPI_MVC.Models
 
         [JsonIgnore]
         public string Password { get; set; } = string.Empty;
+
+        public EndpointAccess Access { get; set; } = EndpointAccess.TasksOwned;
     }
 }

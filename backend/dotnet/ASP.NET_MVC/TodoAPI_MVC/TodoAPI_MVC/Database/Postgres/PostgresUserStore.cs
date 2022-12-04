@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Npgsql;
 using System.Linq.Expressions;
+using System.Security.Claims;
 using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Models;
 
@@ -37,9 +38,17 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
+        public async Task<IdentityResult> DeleteAsync(User user, CancellationToken cancellationToken)
         {
-            throw new NotImplementedException();
+            try
+            {
+                await _dataSource.DeleteRows(TableName, _const((User u) => u.Id == user.Id), cancellationToken);
+                return IdentityResult.Success;
+            }
+            catch (PostgresException error)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = error.MessageText });
+            }
         }
 
         public void Dispose()
@@ -109,9 +118,64 @@ namespace TodoAPI_MVC.Database.Postgres
             throw new NotImplementedException();
         }
 
-        public Task<IdentityResult> UpdateAsync(User user, CancellationToken cancellationToken)
+        public async Task<IdentityResult> UpdateAsync(User user, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var constraint = _const((User u) => u.Id == user.Id);
+                var rowsChanged = await _dataSource.UpdateRows(TableName, user, constraint, cancellationToken);
+                if (rowsChanged > 0)
+                    return IdentityResult.Success;
+
+                return IdentityResult.Failed(new IdentityError { Description = "Unable to find user!" });
+            }
+            catch (PostgresException error)
+            {
+                return IdentityResult.Failed(new IdentityError { Description = error.MessageText });
+            }
+        }
+
+        public Task<IList<Claim>> GetClaimsAsync(User user, CancellationToken cancellationToken)
         {
             throw new NotImplementedException();
+        }
+
+        public Task AddClaimsAsync(User user, IEnumerable<Claim> claims, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task ReplaceClaimAsync(User user, Claim claim, Claim newClaim, CancellationToken cancellationToken)
+        {
+            if (claim.Type != newClaim.Type)
+                throw new ArgumentException("Incompatible Claim types!", nameof(newClaim));
+
+            user.Access = claim.Type switch
+            {
+                "Access" => Enum.Parse<EndpointAccess>(newClaim.Value),
+                _ => throw new InvalidOperationException("Unrecognized Claim type!"),
+            };
+
+            return Task.CompletedTask;
+        }
+
+        public Task RemoveClaimsAsync(User user, IEnumerable<Claim> claims, CancellationToken cancellationToken)
+        {
+            throw new NotImplementedException();
+        }
+
+        public async Task<IList<User>> GetUsersForClaimAsync(Claim claim, CancellationToken cancellationToken)
+        {
+            switch (claim.Type)
+            {
+                case "Access":
+                    var access = Enum.Parse<EndpointAccess>(claim.Value);
+                    var constraint = _const((User u) => u.Access == access);
+                    return await _dataSource.ReadRows<User>(TableName, constraint, cancellationToken);
+
+                default:
+                    return new List<User>();
+            }
         }
     }
 }
