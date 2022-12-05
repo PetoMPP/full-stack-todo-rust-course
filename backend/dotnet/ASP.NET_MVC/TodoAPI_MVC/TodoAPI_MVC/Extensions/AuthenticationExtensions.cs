@@ -35,6 +35,7 @@ namespace TodoAPI_MVC.Extensions
                     };
                 });
 
+            builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
             builder.Services.AddClaims();
         }
 

@@ -2,6 +2,7 @@
 using Npgsql;
 using System.Linq.Expressions;
 using System.Security.Claims;
+using TodoAPI_MVC.Authentication;
 using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Models;
 

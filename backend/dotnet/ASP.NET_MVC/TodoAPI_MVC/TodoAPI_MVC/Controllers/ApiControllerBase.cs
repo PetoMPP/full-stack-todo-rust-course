@@ -7,16 +7,13 @@ namespace TodoAPI_MVC.Controllers
 {
     public abstract class ApiControllerBase : ControllerBase
     {
-        protected readonly IConfiguration _config;
         protected readonly UserManager<User> _userManager;
         protected readonly SignInManager<User> _signInManager;
 
         protected ApiControllerBase(
-            IConfiguration config,
             UserManager<User> userManager,
             SignInManager<User> signInManager)
         {
-            _config = config;
             _userManager = userManager;
             _signInManager = signInManager;
         }

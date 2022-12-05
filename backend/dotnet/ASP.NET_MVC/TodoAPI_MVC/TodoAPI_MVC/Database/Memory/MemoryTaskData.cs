@@ -65,7 +65,7 @@ namespace TodoAPI_MVC.Database.Memory
             return Task.FromResult(DatabaseResults.Ok());
         }
 
-        public Task<IDatabaseResult<TodoTask[]>> GetAllAsync(
+        public Task<IDatabaseResult<TodoTask[]>> GetAllOwnedAsync(
             int? userId, CancellationToken _ = default)
         {
             if (userId is not int id)
@@ -126,6 +126,11 @@ namespace TodoAPI_MVC.Database.Memory
                 return "Task is not owned by the user!";
 
             return null;
+        }
+
+        public Task<IDatabaseResult<TodoTask[]>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -58,7 +58,22 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(
+        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var tasks = await _dataSource.ReadRows<TodoTask>(
+                    TableName, cancellationToken: cancellationToken);
+
+                return DatabaseResults.Ok(tasks.ToArray());
+            }
+            catch (Exception error)
+            {
+                return DatabaseResults.Error<TodoTask[]>(error.Message);
+            }
+        }
+
+        public async Task<IDatabaseResult<TodoTask[]>> GetAllOwnedAsync(
             int? userId, CancellationToken cancellationToken = default)
         {
             try

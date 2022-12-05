@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace TodoAPI_MVC.Authentication.Handlers
 {
@@ -7,16 +8,17 @@ namespace TodoAPI_MVC.Authentication.Handlers
         protected override Task HandleRequirementAsync(
             AuthorizationHandlerContext context, AccessRequirement requirement)
         {
-            if (!context.User.Claims.Any(c => c.Type == "Access"))
+            if (context.User.Identity is not ClaimsIdentity identity ||
+                !identity.Claims.Any(c => c.Type == "Access"))
             {
                 context.Fail(new(this, "User doesn't have access level specified!"));
                 return Task.CompletedTask;
             }
 
-            var userAccess = (EndpointAccess)int.Parse(
-                context.User.Claims.First(c => c.Type == "Access").Value);
+            if (!int.TryParse(context.User.Claims.First(c => c.Type == "Access").Value, out var access))
+                context.Fail(new(this, "User has unrecognized access level!"));
 
-            if (!userAccess.HasFlag(requirement.RequiredAccess))
+            if (!((EndpointAccess)access).HasFlag(requirement.RequiredAccess))
             {
                 context.Fail(new(this, "User doesn't have required access level!"));
                 return Task.CompletedTask;

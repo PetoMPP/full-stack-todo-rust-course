@@ -1,8 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using TodoAPI_MVC.Authentication;
 using TodoAPI_MVC.Database.Interfaces;
-using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Controllers
@@ -13,15 +13,17 @@ namespace TodoAPI_MVC.Controllers
     public class UsersController : ApiControllerBase
     {
         private readonly ITaskData _taskData;
+        private readonly IAuthenticationService _authService;
 
         public UsersController(
             ITaskData taskData,
-            IConfiguration config,
+            IAuthenticationService authService,
             UserManager<User> userManager,
             SignInManager<User> signInManager)
-            : base(config, userManager, signInManager)
+            : base(userManager, signInManager)
         {
             _taskData = taskData;
+            _authService = authService;
         }
 
         [HttpPost]
@@ -33,7 +35,7 @@ namespace TodoAPI_MVC.Controllers
             {
                 var newUser = await _userManager.FindByNameAsync(user.NormalizedUsername);
                 await ITaskData.CreateDefaultsAsync(_taskData, newUser.Id);
-                newUser.Token = _config.GetToken(newUser);
+                newUser.Token = _authService.GetToken(newUser);
                 return Ok(newUser);
             }
 
@@ -52,7 +54,7 @@ namespace TodoAPI_MVC.Controllers
             if (!result.Succeeded)
                 return Unauthorized("Invalid username or password!");
 
-            user.Token = _config.GetToken(user);
+            user.Token = _authService.GetToken(user);
             return Ok(user);
         }
     }

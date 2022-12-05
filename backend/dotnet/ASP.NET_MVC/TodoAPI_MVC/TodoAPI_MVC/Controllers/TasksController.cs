@@ -1,13 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using TodoAPI_MVC.Authentication;
 using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Controllers
 {
-    [Authorize]
+    [Authorize(Policy = nameof(EndpointAccess.TasksOwned))]
     [ApiController]
     [Route("api/v1/[controller]")]
     public class TasksController : ApiControllerBase
@@ -16,10 +17,9 @@ namespace TodoAPI_MVC.Controllers
 
         public TasksController(
             ITaskData taskData,
-            IConfiguration config,
             UserManager<User> userManager,
             SignInManager<User> signInManager)
-            : base(config, userManager, signInManager)
+            : base(userManager, signInManager)
         {
             _taskData = taskData;
         }
@@ -40,9 +40,9 @@ namespace TodoAPI_MVC.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        public async Task<IActionResult> GetAllOwned(CancellationToken cancellationToken)
         {
-            return (await _taskData.GetAllAsync(await GetCurrentUserId(), cancellationToken))
+            return (await _taskData.GetAllOwnedAsync(await GetCurrentUserId(), cancellationToken))
                 .ToIActionResult(this);
         }
 
@@ -66,6 +66,13 @@ namespace TodoAPI_MVC.Controllers
         {
             return (await _taskData.DeleteAsync(id, await GetCurrentUserId(), cancellationToken))
                 .ToIActionResult(this);
+        }
+
+        [HttpGet("all")]
+        [Authorize(Policy = nameof(EndpointAccess.TasksAll))]
+        public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+        {
+            return (await _taskData.GetAllAsync(cancellationToken)).ToIActionResult(this);
         }
     }
 }
