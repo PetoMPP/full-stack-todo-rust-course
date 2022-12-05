@@ -1,48 +1,14 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
-using TodoAPI_MVC.Handlers;
-using TodoAPI_MVC.Models;
+using TodoAPI_MVC.Authentication;
+using TodoAPI_MVC.Authentication.Handlers;
 
 namespace TodoAPI_MVC.Extensions
 {
     public static class AuthenticationExtensions
     {
-        public static string GetToken(this IConfiguration config, User user)
-        {
-            var jwtKey = Environment.GetEnvironmentVariable(Consts.JwtSecretEnvName) ?? "password";
-            var issuer = config["Jwt:Issuer"];
-            var audience = config["Jwt:Audience"];
-            var securityKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey));
-            var credentials = new SigningCredentials(
-                securityKey, SecurityAlgorithms.HmacSha256);
-
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("Id", $"{user.Id}"),
-                    new Claim("Access", $"{(int)user.Access}"),
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-                    new Claim(JwtRegisteredClaimNames.Email, user.Username),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                }),
-                Expires = DateTime.UtcNow.AddMinutes(30),
-                Audience = audience,
-                Issuer = issuer,
-                SigningCredentials = credentials
-            };
-
-            var jwtTokenHandler = new JwtSecurityTokenHandler();
-
-            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
-
-            return jwtTokenHandler.WriteToken(token);
-        }
-
         public static void AddJwtAuthentication(this WebApplicationBuilder builder)
         {
             var jwtKey = Environment.GetEnvironmentVariable(Consts.JwtSecretEnvName) ?? "password";
@@ -69,7 +35,26 @@ namespace TodoAPI_MVC.Extensions
                     };
                 });
 
-            builder.Services.AddAuthorization();
+            builder.Services.AddClaims();
+        }
+
+        private static IServiceCollection AddClaims(this IServiceCollection services)
+        {
+            services.AddSingleton<IAuthorizationHandler, AccessHandler>();
+            services.AddAuthorization(AddAccessPolicies);
+
+            return services;
+        }
+
+        private static void AddAccessPolicies(AuthorizationOptions o)
+        {
+            foreach (var access in Enum.GetValues<EndpointAccess>()[1..])
+            {
+
+                var name = $"{access}";
+                var allowedValues = $"{(int)access}";
+                o.AddPolicy(name, p => p.Requirements.Add(new AccessRequirement(access)));
+            }
         }
     }
 }

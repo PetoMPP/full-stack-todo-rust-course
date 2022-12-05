@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 
-namespace TodoAPI_MVC.Handlers
+namespace TodoAPI_MVC.Authentication.Handlers
 {
     public class AuthEventsHandler : JwtBearerEvents
     {

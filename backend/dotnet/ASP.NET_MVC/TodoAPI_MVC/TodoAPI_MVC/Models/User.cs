@@ -1,5 +1,6 @@
 ﻿using System.Text.Json.Serialization;
 using TodoAPI_MVC.Atributtes;
+using TodoAPI_MVC.Authentication;
 
 namespace TodoAPI_MVC.Models
 {
