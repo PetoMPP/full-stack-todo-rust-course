@@ -11,6 +11,7 @@ namespace TodoAPI_MVC.Services
         private readonly UserManager<User> _userManager;
         private readonly ILogger _logger;
         private readonly IHostApplicationLifetime _applicationLifetime;
+        private readonly PeriodicTimer _timer = new(TimeSpan.FromHours(1));
 
         public DatabaseInitializor(
             UserManager<User> userManager,
@@ -37,7 +38,11 @@ namespace TodoAPI_MVC.Services
         {
             try
             {
-                await EnsureAdminAccount();
+                do
+                {
+                    await EnsureAdminAccount();
+                }
+                while (await _timer.WaitForNextTickAsync());
             }
             catch (Exception error)
             {
