@@ -31,31 +31,55 @@ namespace TodoAPI_MVC.Extensions
                         ValidateIssuer = true,
                         ValidateAudience = true,
                         ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true
+                        ValidateIssuerSigningKey = true,
+                        LifetimeValidator = ValidateLifetime
                     };
                 });
 
+            builder.Services.AddSingleton<IRevokedTokens, RevokedTokens>();
             builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
             builder.Services.AddClaims();
+        }
+
+        private static bool ValidateLifetime(
+            DateTime? notBefore,
+            DateTime? expires,
+            SecurityToken securityToken,
+            TokenValidationParameters validationParameters)
+        {
+            if (!validationParameters.ValidateLifetime)
+                return true;
+
+            var checkTime = DateTime.UtcNow;
+
+            return notBefore is DateTime nbf && nbf <= checkTime &&
+                expires is DateTime exp && exp >= checkTime;
         }
 
         private static IServiceCollection AddClaims(this IServiceCollection services)
         {
             services.AddSingleton<IAuthorizationHandler, AccessHandler>();
-            services.AddAuthorization(AddAccessPolicies);
+            services.AddSingleton<IAuthorizationHandler, TokenValidHandler>();
+            services.AddAuthorization(AddPolicies);
 
             return services;
         }
 
-        private static void AddAccessPolicies(AuthorizationOptions o)
+        private static void AddPolicies(AuthorizationOptions o)
         {
-            foreach (var access in Enum.GetValues<EndpointAccess>()[1..])
+            foreach (var access in Enum.GetValues<EndpointAccess>())
             {
 
                 var name = $"{access}";
                 var allowedValues = $"{(int)access}";
-                o.AddPolicy(name, p => p.Requirements.Add(new AccessRequirement(access)));
+                o.AddPolicy(name, p => CreatePolicy(p, access));
             }
+        }
+
+        private static void CreatePolicy(AuthorizationPolicyBuilder builder, EndpointAccess access)
+        {
+            builder.Requirements.Add(new TokenValidRequirement());
+            builder.Requirements.Add(new AccessRequirement(access));
         }
     }
 }

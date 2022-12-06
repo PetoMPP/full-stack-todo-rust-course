@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using TodoAPI_MVC.Authentication;
 using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Models;
@@ -12,16 +14,22 @@ namespace TodoAPI_MVC.Controllers
     [Route("api/v1/[controller]")]
     public class UsersController : ApiControllerBase
     {
+        private readonly ILogger _logger;
+        private readonly IRevokedTokens _revokedTokens;
         private readonly ITaskData _taskData;
         private readonly IAuthenticationService _authService;
 
         public UsersController(
+            ILogger<UsersController> logger,
+            IRevokedTokens revokedTokens,
             ITaskData taskData,
             IAuthenticationService authService,
             UserManager<User> userManager,
             SignInManager<User> signInManager)
             : base(userManager, signInManager)
         {
+            _logger = logger;
+            _revokedTokens = revokedTokens;
             _taskData = taskData;
             _authService = authService;
         }
@@ -56,6 +64,33 @@ namespace TodoAPI_MVC.Controllers
 
             user.Token = _authService.GetToken(user);
             return Ok(user);
+        }
+
+        [HttpPost("logout")]
+        [Authorize(Policy = nameof(EndpointAccess.None))]
+        public IActionResult Logout()
+        {
+            if (HttpContext.User.Identity is not ClaimsIdentity identity)
+                return BadRequest("User is not logged in!");
+
+            try
+            {
+                var tokenGuid = Guid.Parse(
+                    identity.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value);
+
+                var expirationDate = DateTimeOffset.FromUnixTimeSeconds(
+                    long.Parse(identity.Claims.First(c => c.Type == JwtRegisteredClaimNames.Exp).Value))
+                    .DateTime;
+
+                _revokedTokens.Add(tokenGuid, expirationDate);
+
+                return Ok();
+            }
+            catch (Exception error)
+            {
+                _logger.LogError(error, "Error during claims parsing!");
+                return BadRequest("User is not logged in!");
+            }
         }
     }
 }
