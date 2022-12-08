@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using TodoAPI_MVC.Atributtes;
 using TodoAPI_MVC.Authentication;
 using TodoAPI_MVC.Database.Interfaces;
 using TodoAPI_MVC.Models;
@@ -67,7 +68,7 @@ namespace TodoAPI_MVC.Controllers
         }
 
         [HttpPost("logout")]
-        [Authorize(Policy = nameof(EndpointAccess.None))]
+        [AuthorizeAccess(EndpointAccess.None)]
         public IActionResult Logout()
         {
             if (HttpContext.User.Identity is not ClaimsIdentity identity)
