@@ -31,6 +31,7 @@ namespace TodoAPI_MVC.Services
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
+            _timer.Dispose();
             return Task.CompletedTask;
         }
 
@@ -87,9 +88,7 @@ namespace TodoAPI_MVC.Services
             if (!deletionResult.Succeeded)
                 return false;
 
-            creationResult = await _userManager.CreateAsync(user, password);
-
-            return creationResult.Succeeded;
+            return (await _userManager.CreateAsync(user, password)).Succeeded;
         }
     }
 }

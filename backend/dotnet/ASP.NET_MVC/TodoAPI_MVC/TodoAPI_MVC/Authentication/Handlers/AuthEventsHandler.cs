@@ -1,23 +1,28 @@
 ﻿using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Text.Json;
 
 namespace TodoAPI_MVC.Authentication.Handlers
 {
     public class AuthEventsHandler : JwtBearerEvents
     {
-        public static AuthEventsHandler Instance { get; } = new AuthEventsHandler();
+        private readonly JsonSerializerOptions _jsonSerializerOptions;
 
-        private AuthEventsHandler()
+        public AuthEventsHandler(JsonSerializerOptions jsonSerializerOptions)
         {
             OnMessageReceived = MessageReceivedHandler;
             OnForbidden = ParseErrorsHeaderIntoBody;
+            _jsonSerializerOptions = jsonSerializerOptions;
         }
 
-        private static async Task ParseErrorsHeaderIntoBody(ResultContext<JwtBearerOptions> context)
+        private async Task ParseErrorsHeaderIntoBody(ResultContext<JwtBearerOptions> context)
         {
             var errors = context.Response.Headers["error"];
-            if (context.Response.Headers.Remove("error"))
-                await context.Response.WriteAsJsonAsync(new { error = string.Join(", ", errors) });
+            if (!context.Response.Headers.Remove("error"))
+                return;
+                
+            await context.Response.WriteAsJsonAsync(
+                new { Error = string.Join(", ", errors) }, _jsonSerializerOptions);
         }
 
         private Task MessageReceivedHandler(MessageReceivedContext context)

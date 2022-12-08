@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using System.Text.Json;
 using TodoAPI_MVC.Authentication;
 using TodoAPI_MVC.Authentication.Handlers;
 
@@ -9,9 +10,12 @@ namespace TodoAPI_MVC.Extensions
 {
     public static class AuthenticationExtensions
     {
-        public static void AddJwtAuthentication(this WebApplicationBuilder builder)
+        public static void AddJwtAuthentication(
+            this WebApplicationBuilder builder, JsonSerializerOptions jsonSerializerOptions)
         {
-            var jwtKey = Environment.GetEnvironmentVariable(Consts.JwtSecretEnvName) ?? "password";
+            var jwtKey = Environment.GetEnvironmentVariable(VariableNames.JwtSecret)
+                ?? throw new InvalidOperationException($"{VariableNames.JwtSecret} is unset!");
+
             builder.Services
                 .AddAuthentication(options =>
                  {
@@ -21,7 +25,7 @@ namespace TodoAPI_MVC.Extensions
                  })
                 .AddJwtBearer(options =>
                 {
-                    options.Events = AuthEventsHandler.Instance;
+                    options.Events = new AuthEventsHandler(jsonSerializerOptions);
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],

@@ -31,7 +31,7 @@ namespace TodoAPI_MVC.Database.Service
             if (value is string or char)
                 return $"'{value}'";
             if (value is DateTime dateTime)
-                return $"'{dateTime.ToString(Consts.DateFormat)}'";
+                return $"'{dateTime.ToString(Formats.Date)}'";
             if (valueType?.IsEnum == true)
                 return $"{(int)value}";
 

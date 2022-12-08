@@ -33,9 +33,9 @@ namespace TodoAPI_MVC.Database.Postgres
                 await _dataSource.InsertRows(TableName, new[] {user}, cancellationToken);
                 return IdentityResult.Success;
             }
-            catch (PostgresException error)
+            catch (Exception error)
             {
-                return IdentityResult.Failed(new IdentityError { Description = error.MessageText });
+                return IdentityResult.Failed(new IdentityError { Description = error.Message });
             }
         }
 
@@ -46,9 +46,9 @@ namespace TodoAPI_MVC.Database.Postgres
                 await _dataSource.DeleteRows(TableName, _const((User u) => u.Id == user.Id), cancellationToken);
                 return IdentityResult.Success;
             }
-            catch (PostgresException error)
+            catch (Exception error)
             {
-                return IdentityResult.Failed(new IdentityError { Description = error.MessageText });
+                return IdentityResult.Failed(new IdentityError { Description = error.Message });
             }
         }
 
@@ -130,9 +130,9 @@ namespace TodoAPI_MVC.Database.Postgres
 
                 return IdentityResult.Failed(new IdentityError { Description = "Unable to find user!" });
             }
-            catch (PostgresException error)
+            catch (Exception error)
             {
-                return IdentityResult.Failed(new IdentityError { Description = error.MessageText });
+                return IdentityResult.Failed(new IdentityError { Description = error.Message });
             }
         }
 

@@ -6,16 +6,17 @@ namespace TodoAPI_MVC.Authentication.Handlers
 {
     public class TokenValidHandler : VerboseAuthorizationHandler<TokenValidRequirement>
     {
-        private readonly IRevokedTokens _invalidatedTokens;
+        private readonly IRevokedTokens _revokedTokens;
 
         public TokenValidHandler(
-            IRevokedTokens invalidatedTokens,
+            IRevokedTokens revokedTokens,
             ILogger<TokenValidHandler> logger) : base(logger)
         {
-            _invalidatedTokens = invalidatedTokens;
+            _revokedTokens = revokedTokens;
         }
 
-        protected override Task HandleRequirementAsync(AuthorizationHandlerContext context, TokenValidRequirement requirement)
+        protected override Task HandleRequirementAsync(
+            AuthorizationHandlerContext context, TokenValidRequirement requirement)
         {
             if (context.User.Identity is not ClaimsIdentity identity)
             {
@@ -46,7 +47,7 @@ namespace TodoAPI_MVC.Authentication.Handlers
                 return Task.CompletedTask;
             }
 
-            if (_invalidatedTokens.Contains(tokenId))
+            if (_revokedTokens.Contains(tokenId))
             {
                 FailAndCryAboutIt(context, "Invalid identity token!");
                 return Task.CompletedTask;

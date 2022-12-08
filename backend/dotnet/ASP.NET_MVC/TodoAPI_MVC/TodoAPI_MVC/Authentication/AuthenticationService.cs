@@ -23,7 +23,9 @@ namespace TodoAPI_MVC.Authentication
 
         public string GetToken(User user)
         {
-            var jwtKey = Environment.GetEnvironmentVariable(Consts.JwtSecretEnvName) ?? "password";
+            var jwtKey = Environment.GetEnvironmentVariable(VariableNames.JwtSecret)
+                ?? throw new InvalidOperationException($"{VariableNames.JwtSecret} is unset!");
+
             var issuer = _config["Jwt:Issuer"];
             var audience = _config["Jwt:Audience"];
             var securityKey = new SymmetricSecurityKey(

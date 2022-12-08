@@ -40,8 +40,7 @@ namespace TodoAPI_MVC.Json
             public override void Write(Utf8JsonWriter writer, DateTime? value, JsonSerializerOptions options)
             {
                 if (value is DateTime dateTime)
-                    writer.WriteStringValue(dateTime.ToString(Consts.DateFormat));
-
+                    writer.WriteStringValue(dateTime.ToString(Formats.Date));
                 else
                     writer.WriteNullValue();
             }
@@ -64,7 +63,7 @@ namespace TodoAPI_MVC.Json
 
             public override void Write(Utf8JsonWriter writer, DateTime value, JsonSerializerOptions options)
             {
-                writer.WriteStringValue(value.ToString(Consts.DateFormat));
+                writer.WriteStringValue(value.ToString(Formats.Date));
             }
         }
     }

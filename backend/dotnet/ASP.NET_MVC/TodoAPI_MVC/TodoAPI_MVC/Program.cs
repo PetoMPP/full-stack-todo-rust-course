@@ -1,4 +1,6 @@
 ﻿using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Mvc;
+using System.Text.Json;
 using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Json;
 using TodoAPI_MVC.Middleware;
@@ -14,12 +16,17 @@ namespace TodoAPI_MVC
             ApplyArgs(args);
 
         #if DEBUG
-            Environment.SetEnvironmentVariable(Consts.DatabaseModeEnvName, "postgres");
-            Environment.SetEnvironmentVariable(Consts.DatabaseUserEnvName, "postgres");
-            Environment.SetEnvironmentVariable(Consts.DatabasePasswordEnvName, "12345");
-            Environment.SetEnvironmentVariable(Consts.ApiAdminUserEnvName, "admin");
-            Environment.SetEnvironmentVariable(Consts.ApiAdminPasswordEnvName, "Adm1n!");
+            Environment.SetEnvironmentVariable(VariableNames.DatabaseMode, "postgres");
+            Environment.SetEnvironmentVariable(VariableNames.DatabaseUser, "postgres");
+            Environment.SetEnvironmentVariable(VariableNames.DatabasePassword, "12345");
+            Environment.SetEnvironmentVariable(VariableNames.ApiAdminUser, "admin");
+            Environment.SetEnvironmentVariable(VariableNames.ApiAdminPassword, "Adm1n!");
         #endif
+
+            var jsonSerializerOptions = new JsonSerializerOptions()
+            {
+                PropertyNamingPolicy = SnakeCaseNamingPolicy.SnakeCase
+            };
 
             var builder = WebApplication.CreateBuilder(args);
 
@@ -28,7 +35,7 @@ namespace TodoAPI_MVC
                 p.WithMethods("*").WithHeaders("*").WithOrigins("*");
             }));
 
-            builder.AddJwtAuthentication();
+            builder.AddJwtAuthentication(jsonSerializerOptions);
             builder.Services.AddDbServiceOptions(
                 new(new Database.Service.SnakeCaseNamingPolicy()));
 
@@ -39,8 +46,8 @@ namespace TodoAPI_MVC
                 .AddUserManager<UserManager<User>>()
                 .AddSignInManager<SignInManager<User>>();
 
-            builder.Services.AddControllers().AddJsonOptions(o =>
-                o.JsonSerializerOptions.PropertyNamingPolicy = SnakeCaseNamingPolicy.SnakeCase);
+            builder.Services.AddControllers()
+                .AddJsonOptions(o => OverrideJsonOptions(o, jsonSerializerOptions));
 
         #if DEBUG
             builder.Services.AddEndpointsApiExplorer();
@@ -67,11 +74,21 @@ namespace TodoAPI_MVC
             app.Run();
         }
 
+        private static void OverrideJsonOptions(
+            JsonOptions jsonOptions, JsonSerializerOptions jsonSerializerOptions)
+        {
+            foreach (var propertyInfo in typeof(JsonSerializerOptions).GetProperties().Where(p => p.CanWrite))
+            {
+                var value = propertyInfo.GetValue(jsonSerializerOptions);
+                propertyInfo.SetValue(jsonOptions.JsonSerializerOptions, value);
+            }
+        }
+
         private static void ApplyArgs(string[] args)
         {
-            var jwtSecretIndex = Array.FindIndex(args, 0, args.Length, a => a == Consts.JwtSecretArgName);
+            var jwtSecretIndex = Array.FindIndex(args, 0, args.Length, a => a == Arguments.JwtSecret);
             if (jwtSecretIndex >= 0 && args.TryGetValueAt(jwtSecretIndex + 1, out var jwtSecret))
-                Environment.SetEnvironmentVariable(Consts.JwtSecretEnvName, jwtSecret);
+                Environment.SetEnvironmentVariable(VariableNames.JwtSecret, jwtSecret);
         }
     }
 }

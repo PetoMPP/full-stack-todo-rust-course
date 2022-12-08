@@ -148,16 +148,16 @@ namespace TodoAPI_MVC.Database.Postgres
                 if (task.Id != id)
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
-                if (userId is null)
+                if (userId is not int validUserId)
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
                 var validationError = task.Validate();
                 if (validationError is string error)
                     return DatabaseResults.Error<TodoTask>(error);
 
-                task.UserId = (int)userId;
+                task.UserId = validUserId;
 
-                var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
+                var constraint = _const((TodoTask t) => t.Id == id && t.UserId == validUserId);
 
                 var tasks = await _dataSource.UpdateRowsReturning(
                     TableName, task, constraint, cancellationToken);
