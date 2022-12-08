@@ -8,7 +8,7 @@ using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Extensions
 {
-    public static class WebApplicationBuilderExtensions
+    public static class DatabaseExtensions
     {
         public static IServiceCollection AddDatabaseContext(this IServiceCollection services)
         {

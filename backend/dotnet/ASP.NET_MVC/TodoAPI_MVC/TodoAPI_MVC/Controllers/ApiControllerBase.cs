@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using TodoAPI_MVC.Database;
 using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Controllers
@@ -31,6 +32,28 @@ namespace TodoAPI_MVC.Controllers
             var userId = identity.Claims.First(c => c.Type == "Id")?.Value;
 
             return await _userManager.FindByIdAsync(userId);
+        }
+
+        protected IActionResult ActionResult<T>(IDatabaseResult<T> dbResult)
+        {
+            return dbResult.Code switch
+            {
+                Models.StatusCode.Ok => Ok(dbResult.Data),
+                Models.StatusCode.Error => BadRequest(
+                    string.Join(Environment.NewLine, dbResult.ErrorData ?? Array.Empty<string>())),
+                _ => StatusCode(500)
+            };
+        }
+
+        protected IActionResult ActionResult(IDatabaseResult dbResult)
+        {
+            return dbResult.Code switch
+            {
+                Models.StatusCode.Ok => Ok(),
+                Models.StatusCode.Error => BadRequest(
+                    string.Join(Environment.NewLine, dbResult.ErrorData ?? Array.Empty<string>())),
+                _ => StatusCode(500)
+            };
         }
     }
 }
