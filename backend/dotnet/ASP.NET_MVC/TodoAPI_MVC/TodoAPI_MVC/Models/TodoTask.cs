@@ -17,10 +17,12 @@ namespace TodoAPI_MVC.Models
         DateTime? CompletedAt,
         int UserId)
     {
+        private const int MinTitleLenght = 3;
+
         public string? Validate()
         {
-            if (string.IsNullOrWhiteSpace(Title))
-                return $"{nameof(Title)} cannot be empty!";
+            if (Title.Length < MinTitleLenght)
+                return $"The {nameof(Title)} must be at least {MinTitleLenght} characters long!";
 
             return null;
         }

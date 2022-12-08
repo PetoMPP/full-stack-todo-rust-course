@@ -12,9 +12,14 @@ namespace TodoAPI_MVC_Tests.Json
         public void ShouldConvertValues(string input)
         {
             var factory = new DateTimeJsonConverterFactory();
-            var converter = (JsonConverter<DateTime?>)factory.CreateConverter(typeof(DateTime?), new JsonSerializerOptions())!;
-            var utf8JsonReader = new Utf8JsonReader(new ReadOnlySpan<byte>(Encoding.UTF8.GetBytes(input)));
-            var convertAction = (Utf8JsonReader reader) => converter.Read(ref reader, typeof(DateTime?), new JsonSerializerOptions());
+            var converter = (JsonConverter<DateTime?>)factory
+                .CreateConverter(typeof(DateTime?), new JsonSerializerOptions())!;
+
+            var utf8JsonReader = new Utf8JsonReader(
+                new ReadOnlySpan<byte>(Encoding.UTF8.GetBytes(input)));
+
+            var convertAction = (Utf8JsonReader reader) => converter.Read(
+                ref reader, typeof(DateTime?), new JsonSerializerOptions());
             
             utf8JsonReader.Read();
 

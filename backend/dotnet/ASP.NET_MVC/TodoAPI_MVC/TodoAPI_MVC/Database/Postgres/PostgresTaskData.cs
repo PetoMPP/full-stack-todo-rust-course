@@ -25,6 +25,10 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             try
             {
+                var validationError = task.Validate();
+                if (validationError is string error)
+                    return DatabaseResults.Error<TodoTask>(error);
+
                 task.UserId = userId ?? throw new ArgumentNullException(nameof(userId));
                 var createdTask = (await _dataSource.InsertRowsReturning(
                     TableName, new[] { task }, cancellationToken)).FirstOrDefault();
@@ -54,7 +58,22 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(
+        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(CancellationToken cancellationToken = default)
+        {
+            try
+            {
+                var tasks = await _dataSource.ReadRows<TodoTask>(
+                    TableName, cancellationToken: cancellationToken);
+
+                return DatabaseResults.Ok(tasks.ToArray());
+            }
+            catch (Exception error)
+            {
+                return DatabaseResults.Error<TodoTask[]>(error.Message);
+            }
+        }
+
+        public async Task<IDatabaseResult<TodoTask[]>> GetAllOwnedAsync(
             int? userId, CancellationToken cancellationToken = default)
         {
             try
@@ -129,12 +148,16 @@ namespace TodoAPI_MVC.Database.Postgres
                 if (task.Id != id)
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
-                if (userId is null)
+                if (userId is not int validUserId)
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
-                task.UserId = (int)userId;
+                var validationError = task.Validate();
+                if (validationError is string error)
+                    return DatabaseResults.Error<TodoTask>(error);
 
-                var constraint = _const((TodoTask t) => t.Id == id && t.UserId == userId);
+                task.UserId = validUserId;
+
+                var constraint = _const((TodoTask t) => t.Id == id && t.UserId == validUserId);
 
                 var tasks = await _dataSource.UpdateRowsReturning(
                     TableName, task, constraint, cancellationToken);

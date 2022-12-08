@@ -181,9 +181,12 @@ namespace TodoAPI_MVC.Database.Postgres
                         if (value.GetType().IsAssignableTo(propertyData.PropertyInfo.PropertyType))
                             propertyData.PropertyInfo.SetValue(item, value);
 
-                        else if (propertyType.IsEnum && value is string stringValue)
+                        if (propertyType.IsEnum && value is string stringValue)
                             if (Enum.TryParse(propertyType, stringValue, out var enumValue))
                                 propertyData.PropertyInfo.SetValue(item, enumValue);
+
+                        if (propertyType.IsEnum && value is int intValue)
+                            propertyData.PropertyInfo.SetValue(item, intValue);
                     }
                 }
 

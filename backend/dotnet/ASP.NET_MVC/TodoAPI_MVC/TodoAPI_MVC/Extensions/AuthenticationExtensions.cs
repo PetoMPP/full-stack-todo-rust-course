@@ -1,50 +1,21 @@
 ﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
 using System.Text;
-using TodoAPI_MVC.Handlers;
-using TodoAPI_MVC.Models;
+using System.Text.Json;
+using TodoAPI_MVC.Authentication;
+using TodoAPI_MVC.Authentication.Handlers;
 
 namespace TodoAPI_MVC.Extensions
 {
     public static class AuthenticationExtensions
     {
-        public static string GetToken(this IConfiguration config, User user)
+        public static void AddJwtAuthentication(
+            this WebApplicationBuilder builder, JsonSerializerOptions jsonSerializerOptions)
         {
-            var jwtKey = Environment.GetEnvironmentVariable(Consts.JwtSecretEnvName) ?? "password";
-            var issuer = config["Jwt:Issuer"];
-            var audience = config["Jwt:Audience"];
-            var securityKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey));
-            var credentials = new SigningCredentials(
-                securityKey, SecurityAlgorithms.HmacSha256);
+            var jwtKey = Environment.GetEnvironmentVariable(VariableNames.JwtSecret)
+                ?? throw new InvalidOperationException($"{VariableNames.JwtSecret} is unset!");
 
-            var tokenDescriptor = new SecurityTokenDescriptor
-            {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim("Id", $"{user.Id}"),
-                    new Claim(JwtRegisteredClaimNames.Sub, user.Username),
-                    new Claim(JwtRegisteredClaimNames.Email, user.Username),
-                    new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-                }),
-                Expires = DateTime.UtcNow.AddMinutes(30),
-                Audience = audience,
-                Issuer = issuer,
-                SigningCredentials = credentials
-            };
-
-            var jwtTokenHandler = new JwtSecurityTokenHandler();
-
-            var token = jwtTokenHandler.CreateToken(tokenDescriptor);
-
-            return jwtTokenHandler.WriteToken(token);
-        }
-
-        public static void AddJwtAuthentication(this WebApplicationBuilder builder)
-        {
-            var jwtKey = Environment.GetEnvironmentVariable(Consts.JwtSecretEnvName) ?? "password";
             builder.Services
                 .AddAuthentication(options =>
                  {
@@ -54,7 +25,7 @@ namespace TodoAPI_MVC.Extensions
                  })
                 .AddJwtBearer(options =>
                 {
-                    options.Events = AuthEventsHandler.Instance;
+                    options.Events = new AuthEventsHandler(jsonSerializerOptions);
                     options.TokenValidationParameters = new TokenValidationParameters
                     {
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
@@ -64,11 +35,55 @@ namespace TodoAPI_MVC.Extensions
                         ValidateIssuer = true,
                         ValidateAudience = true,
                         ValidateLifetime = true,
-                        ValidateIssuerSigningKey = true
+                        ValidateIssuerSigningKey = true,
+                        LifetimeValidator = ValidateLifetime
                     };
                 });
 
-            builder.Services.AddAuthorization();
+            builder.Services.AddSingleton<IRevokedTokens, RevokedTokens>();
+            builder.Services.AddSingleton<IAuthenticationService, AuthenticationService>();
+            builder.Services.AddClaims();
+        }
+
+        private static bool ValidateLifetime(
+            DateTime? notBefore,
+            DateTime? expires,
+            SecurityToken securityToken,
+            TokenValidationParameters validationParameters)
+        {
+            if (!validationParameters.ValidateLifetime)
+                return true;
+
+            var checkTime = DateTime.UtcNow;
+
+            return notBefore is DateTime nbf && nbf <= checkTime &&
+                expires is DateTime exp && exp >= checkTime;
+        }
+
+        private static IServiceCollection AddClaims(this IServiceCollection services)
+        {
+            services.AddSingleton<IAuthorizationHandler, AccessHandler>();
+            services.AddSingleton<IAuthorizationHandler, TokenValidHandler>();
+            services.AddAuthorization(AddPolicies);
+
+            return services;
+        }
+
+        private static void AddPolicies(AuthorizationOptions o)
+        {
+            foreach (var access in Enum.GetValues<EndpointAccess>())
+            {
+
+                var name = $"{access}";
+                var allowedValues = $"{(int)access}";
+                o.AddPolicy(name, p => CreatePolicy(p, access));
+            }
+        }
+
+        private static void CreatePolicy(AuthorizationPolicyBuilder builder, EndpointAccess access)
+        {
+            builder.Requirements.Add(new TokenValidRequirement());
+            builder.Requirements.Add(new AccessRequirement(access));
         }
     }
 }

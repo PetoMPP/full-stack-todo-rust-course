@@ -8,14 +8,14 @@ using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC.Extensions
 {
-    public static class WebApplicationBuilderExtensions
+    public static class DatabaseExtensions
     {
         public static IServiceCollection AddDatabaseContext(this IServiceCollection services)
         {
-            if (Environment.GetEnvironmentVariable(Consts.DatabaseModeEnvName) is not string databaseModeString ||
+            if (Environment.GetEnvironmentVariable(VariableNames.DatabaseMode) is not string databaseModeString ||
                 !Enum.TryParse<DatabaseMode>(databaseModeString, true, out var databaseMode))
             {
-                throw new InvalidOperationException($"{Consts.DatabaseModeEnvName} is unset!");
+                throw new InvalidOperationException($"{VariableNames.DatabaseMode} is unset!");
             }
 
             return databaseMode switch
@@ -56,11 +56,11 @@ namespace TodoAPI_MVC.Extensions
 
         private static string GetPostgresConnectionString()
         {
-            if (Environment.GetEnvironmentVariable(Consts.DatabaseUserEnvName) is not string user)
-                throw new InvalidOperationException($"{Consts.DatabaseUserEnvName} is unset!");
+            if (Environment.GetEnvironmentVariable(VariableNames.DatabaseUser) is not string user)
+                throw new InvalidOperationException($"{VariableNames.DatabaseUser} is unset!");
 
-            if (Environment.GetEnvironmentVariable(Consts.DatabasePasswordEnvName) is not string password)
-                throw new InvalidOperationException($"{Consts.DatabasePasswordEnvName} is unset!");
+            if (Environment.GetEnvironmentVariable(VariableNames.DatabasePassword) is not string password)
+                throw new InvalidOperationException($"{VariableNames.DatabasePassword} is unset!");
 
             return $"Host=localhost:5432;Username={user};Password={password}";
         }
