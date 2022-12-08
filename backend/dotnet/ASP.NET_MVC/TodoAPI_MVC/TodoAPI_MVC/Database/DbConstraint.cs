@@ -101,28 +101,36 @@ namespace TodoAPI_MVC.Database
 
                 _stringBuilder.Append(paramName);
             }
-            else if (memberExpression.Expression is MemberExpression innerMemberExpression)
+            else if (memberExpression.Expression is MemberExpression or ConstantExpression)
             {
-                var propertyInfo = (PropertyInfo)memberExpression.Member;
-                var innerMemberValue = propertyInfo.GetValue(
-                    Expression.Lambda(innerMemberExpression).Compile().DynamicInvoke());
-
-                ValidateOperator(innerMemberValue);
-                _stringBuilder.Append(_dbService.GetSqlValue(innerMemberValue));
-            }
-            else if (memberExpression.Expression is ConstantExpression innerConstantExpression)
-            {
-                var fieldInfo = (FieldInfo)memberExpression.Member;
-                var innerConstantValue = fieldInfo.GetValue(
-                    Expression.Lambda(innerConstantExpression).Compile().DynamicInvoke());
-
-                ValidateOperator(innerConstantValue);
-                _stringBuilder.Append(_dbService.GetSqlValue(innerConstantValue));
+                ParseInnerExpression(memberExpression.Expression, memberExpression.Member);
             }
             else
             {
                 throw new InvalidOperationException("Unable to parse MemberExpression!");
             }
+        }
+
+        private void ParseInnerExpression(Expression innerExpression, MemberInfo member)
+        {
+            object? value;
+            if (member is PropertyInfo propertyInfo)
+            {
+                value = propertyInfo.GetValue(
+                    Expression.Lambda(innerExpression).Compile().DynamicInvoke());
+            }
+            else if (member is FieldInfo fieldInfo)
+            {
+                value = fieldInfo.GetValue(
+                    Expression.Lambda(innerExpression).Compile().DynamicInvoke());
+            }
+            else
+            {
+                throw new InvalidOperationException("Unable to parse inner expression!");
+            }
+
+            ValidateOperator(value);
+            _stringBuilder.Append(_dbService.GetSqlValue(value));
         }
 
         private void ValidateOperator(object? nextValue)
