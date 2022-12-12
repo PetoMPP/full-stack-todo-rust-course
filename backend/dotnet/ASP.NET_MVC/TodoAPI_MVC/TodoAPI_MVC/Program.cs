@@ -13,14 +13,26 @@ namespace TodoAPI_MVC
     {
         public static async Task Main(string[] args)
         {
-            ApplyArgs(args);
+            var variables = new Variables();
+            ApplyArgs(args, variables);
 
         #if DEBUG
-            Environment.SetEnvironmentVariable(VariableNames.DatabaseMode, "postgres");
-            Environment.SetEnvironmentVariable(VariableNames.DatabaseUser, "postgres");
-            Environment.SetEnvironmentVariable(VariableNames.DatabasePassword, "12345");
-            Environment.SetEnvironmentVariable(VariableNames.ApiAdminUser, "admin");
-            Environment.SetEnvironmentVariable(VariableNames.ApiAdminPassword, "Adm1n!");
+
+            Environment.SetEnvironmentVariable(
+                variables.DatabaseMode, "postgres");
+
+            Environment.SetEnvironmentVariable(
+                variables.DatabaseUser, "postgres");
+
+            Environment.SetEnvironmentVariable(
+                variables.DatabasePassword, "12345");
+
+            Environment.SetEnvironmentVariable(
+                variables.ApiAdminUser, "admin");
+
+            Environment.SetEnvironmentVariable(
+                variables.ApiAdminPassword, "Adm1n!");
+
         #endif
 
             var jsonSerializerOptions = new JsonSerializerOptions()
@@ -35,11 +47,13 @@ namespace TodoAPI_MVC
                 p.WithMethods("*").WithHeaders("*").WithOrigins("*");
             }));
 
-            builder.AddJwtAuthentication(jsonSerializerOptions);
+
+            builder.AddJwtAuthentication(jsonSerializerOptions, variables);
             builder.Services.AddDbServiceOptions(
                 new(new Database.Service.SnakeCaseNamingPolicy()));
 
-            builder.Services.AddDatabaseContext();
+            builder.Services.AddDatabaseContext(variables);
+            builder.Services.AddSingleton<IVariables>(variables);
             builder.Services.AddScoped<DatabaseInitializor>();
 
             builder.Services.AddIdentityCore<User>()
@@ -84,11 +98,13 @@ namespace TodoAPI_MVC
             }
         }
 
-        private static void ApplyArgs(string[] args)
+        private static void ApplyArgs(string[] args, IVariables variables)
         {
-            var jwtSecretIndex = Array.FindIndex(args, 0, args.Length, a => a == Arguments.JwtSecret);
+            var jwtSecretIndex = Array.FindIndex(
+                args, 0, args.Length, a => a == Arguments.JwtSecret);
+
             if (jwtSecretIndex >= 0 && args.TryGetValueAt(jwtSecretIndex + 1, out var jwtSecret))
-                Environment.SetEnvironmentVariable(VariableNames.JwtSecret, jwtSecret);
+                variables.JwtSecret = jwtSecret;
         }
     }
 }

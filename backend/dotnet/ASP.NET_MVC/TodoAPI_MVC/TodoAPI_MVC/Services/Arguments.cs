@@ -1,4 +1,4 @@
-﻿namespace TodoAPI_MVC
+﻿namespace TodoAPI_MVC.Services
 {
     public static class Arguments
     {

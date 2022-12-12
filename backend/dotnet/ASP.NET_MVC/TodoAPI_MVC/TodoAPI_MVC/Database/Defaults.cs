@@ -1,16 +1,23 @@
 ﻿using TodoAPI_MVC.Models;
+using TodoAPI_MVC.Services;
 
 namespace TodoAPI_MVC.Database
 {
-    public static class Defaults
+    public interface IDefaults
     {
-        public static readonly UserDto DefaultAdmin = new(
-            Environment.GetEnvironmentVariable(VariableNames.ApiAdminUser)
-                ?? throw new InvalidOperationException($"{VariableNames.ApiAdminUser} is unset!"),
-            Environment.GetEnvironmentVariable(VariableNames.ApiAdminPassword)
-                ?? throw new InvalidOperationException($"{VariableNames.ApiAdminPassword} is unset!"));
+        UserDto DefaultAdmin { get; }
+        IReadOnlyCollection<TodoTask> DefaultTasks { get; }
+    }
 
-        public static readonly TodoTask[] DefaultTasks = new[]
+    public class Defaults : IDefaults
+    {
+        private readonly IVariables _variables;
+
+        public UserDto DefaultAdmin => new(
+            _variables.ApiAdminUser,
+            _variables.ApiAdminPassword);
+
+        public IReadOnlyCollection<TodoTask> DefaultTasks => new[]
         {
             new TodoTask
             {
@@ -27,5 +34,10 @@ namespace TodoAPI_MVC.Database
                 Description = "My description can be changed"
             },
         };
+
+        public Defaults(IVariables variables)
+        {
+            _variables = variables;
+        }
     }
 }

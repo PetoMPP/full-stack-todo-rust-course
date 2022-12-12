@@ -9,14 +9,17 @@ namespace TodoAPI_MVC.Database.Postgres
         private const string TableName = "tasks";
         private readonly IPostgresDataSource _dataSource;
         private readonly IDbService _dbService;
+        private readonly IDefaults _defaults;
         private readonly Func<LambdaExpression, DbConstraint> _const;
 
         public PostgresTaskData(
             IPostgresDataSource dataSource,
-            IDbService dbService)
+            IDbService dbService,
+            IDefaults defaults)
         {
             _dataSource = dataSource;
             _dbService = dbService;
+            _defaults = defaults;
             _const = (e) => new DbConstraint(_dbService, e);
         }
 
@@ -39,6 +42,21 @@ namespace TodoAPI_MVC.Database.Postgres
             {
                 return DatabaseResults.Error<TodoTask>(error.Message);
             }
+        }
+
+        public async Task<IDatabaseResult<TodoTask[]>> CreateDefaultsAsync(int? userId, CancellationToken cancellationToken = default)
+        {
+            var tasks = new List<TodoTask>();
+            foreach (var task in _defaults.DefaultTasks)
+            {
+                var result = await CreateAsync(task, userId, cancellationToken);
+                if (!result.IsOk)
+                    return DatabaseResults.Error<TodoTask[]>(result.ErrorData);
+
+                tasks.Add(result.Data);
+            }
+
+            return DatabaseResults.Ok(tasks.ToArray());
         }
 
         public async Task<IDatabaseResult> DeleteAsync(
