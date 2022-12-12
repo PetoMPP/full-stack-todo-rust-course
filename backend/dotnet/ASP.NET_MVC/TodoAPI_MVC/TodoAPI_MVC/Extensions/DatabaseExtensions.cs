@@ -5,23 +5,26 @@ using TodoAPI_MVC.Database.Memory;
 using TodoAPI_MVC.Database.Postgres;
 using TodoAPI_MVC.Database.Service;
 using TodoAPI_MVC.Models;
+using TodoAPI_MVC.Services;
 
 namespace TodoAPI_MVC.Extensions
 {
     public static class DatabaseExtensions
     {
-        public static IServiceCollection AddDatabaseContext(this IServiceCollection services)
+        public static IServiceCollection AddDatabaseContext(
+            this IServiceCollection services,
+            IVariables variables)
         {
-            if (Environment.GetEnvironmentVariable(VariableNames.DatabaseMode) is not string databaseModeString ||
-                !Enum.TryParse<DatabaseMode>(databaseModeString, true, out var databaseMode))
+            if (!Enum.TryParse<DatabaseMode>(
+                variables.DatabaseMode, true, out var databaseMode))
             {
-                throw new InvalidOperationException($"{VariableNames.DatabaseMode} is unset!");
+                throw new InvalidOperationException($"{variables.DatabaseMode} has invalid value!");
             }
 
             return databaseMode switch
             {
                 DatabaseMode.Memory => AddMemoryDbContext(services),
-                DatabaseMode.Postgres => AddPostgresDbContext(services),
+                DatabaseMode.Postgres => AddPostgresDbContext(services, variables),
                 _ => throw new InvalidOperationException(
                     $"{databaseMode} is not valid database mode!"),
             };
@@ -35,10 +38,12 @@ namespace TodoAPI_MVC.Extensions
             return services;
         }
 
-        private static IServiceCollection AddPostgresDbContext(IServiceCollection services)
+        private static IServiceCollection AddPostgresDbContext(
+            IServiceCollection services,
+            IVariables variables)
         {
             services.AddSingleton<IDbService, DbService>();
-            services.AddSingleton(NpgsqlDataSource.Create(GetPostgresConnectionString()));
+            services.AddSingleton(NpgsqlDataSource.Create(GetPostgresConnectionString(variables)));
             services.AddSingleton<IPostgresDataSource, PostgresDataSource>();
 
             services.AddSingleton<ITaskData, PostgresTaskData>();
@@ -54,15 +59,12 @@ namespace TodoAPI_MVC.Extensions
             return services;
         }
 
-        private static string GetPostgresConnectionString()
+        private static string GetPostgresConnectionString(IVariables variables)
         {
-            if (Environment.GetEnvironmentVariable(VariableNames.DatabaseUser) is not string user)
-                throw new InvalidOperationException($"{VariableNames.DatabaseUser} is unset!");
-
-            if (Environment.GetEnvironmentVariable(VariableNames.DatabasePassword) is not string password)
-                throw new InvalidOperationException($"{VariableNames.DatabasePassword} is unset!");
-
-            return $"Host=localhost:5432;Username={user};Password={password}";
+            return 
+                $"Host=localhost:5432;" +
+                $"Username={variables.DatabaseUser};" +
+                $"Password={variables.DatabasePassword}";
         }
     }
 }

@@ -8,16 +8,19 @@ namespace TodoAPI_MVC.Services
 {
     public class DatabaseInitializor : IHostedService
     {
+        private readonly IDefaults _defaults;
         private readonly UserManager<User> _userManager;
         private readonly ILogger _logger;
         private readonly IHostApplicationLifetime _applicationLifetime;
         private readonly PeriodicTimer _timer = new(TimeSpan.FromHours(1));
 
         public DatabaseInitializor(
+            IDefaults defaults,
             UserManager<User> userManager,
             ILogger<DatabaseInitializor> logger,
             IHostApplicationLifetime applicationLifetime)
         {
+            _defaults = defaults;
             _userManager = userManager;
             _logger = logger;
             _applicationLifetime = applicationLifetime;
@@ -62,7 +65,7 @@ namespace TodoAPI_MVC.Services
             if (admins.Any())
                 return;
 
-            var newAdmin = Defaults.DefaultAdmin;
+            var newAdmin = _defaults.DefaultAdmin;
             var user = new User { Username = newAdmin.Username };
 
             if (!await CreateDefaultAdmin(user, newAdmin.Password))

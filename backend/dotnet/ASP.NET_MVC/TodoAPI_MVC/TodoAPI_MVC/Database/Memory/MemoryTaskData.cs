@@ -128,7 +128,14 @@ namespace TodoAPI_MVC.Database.Memory
             return null;
         }
 
-        public Task<IDatabaseResult<TodoTask[]>> GetAllAsync(CancellationToken cancellationToken = default)
+        public Task<IDatabaseResult<TodoTask[]>> GetAllAsync(
+            CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
+
+        public Task<IDatabaseResult<TodoTask[]>> CreateDefaultsAsync(
+            int? userId, CancellationToken cancellationToken = default)
         {
             throw new NotImplementedException();
         }

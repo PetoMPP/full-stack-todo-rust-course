@@ -3,6 +3,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
 using TodoAPI_MVC.Models;
+using TodoAPI_MVC.Services;
 
 namespace TodoAPI_MVC.Authentication
 {
@@ -15,21 +16,20 @@ namespace TodoAPI_MVC.Authentication
     public class AuthenticationService : IAuthenticationService
     {
         private readonly IConfiguration _config;
+        private readonly IVariables _variables;
 
-        public AuthenticationService(IConfiguration config)
+        public AuthenticationService(IConfiguration config, IVariables variables)
         {
             _config = config;
+            _variables = variables;
         }
 
         public string GetToken(User user)
         {
-            var jwtKey = Environment.GetEnvironmentVariable(VariableNames.JwtSecret)
-                ?? throw new InvalidOperationException($"{VariableNames.JwtSecret} is unset!");
-
             var issuer = _config["Jwt:Issuer"];
             var audience = _config["Jwt:Audience"];
             var securityKey = new SymmetricSecurityKey(
-                Encoding.UTF8.GetBytes(jwtKey));
+                Encoding.UTF8.GetBytes(_variables.JwtSecret));
             var credentials = new SigningCredentials(
                 securityKey, SecurityAlgorithms.HmacSha256);
 

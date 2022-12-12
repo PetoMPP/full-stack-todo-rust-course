@@ -5,17 +5,17 @@ using System.Text;
 using System.Text.Json;
 using TodoAPI_MVC.Authentication;
 using TodoAPI_MVC.Authentication.Handlers;
+using TodoAPI_MVC.Services;
 
 namespace TodoAPI_MVC.Extensions
 {
     public static class AuthenticationExtensions
     {
         public static void AddJwtAuthentication(
-            this WebApplicationBuilder builder, JsonSerializerOptions jsonSerializerOptions)
+            this WebApplicationBuilder builder,
+            JsonSerializerOptions jsonSerializerOptions,
+            IVariables variables)
         {
-            var jwtKey = Environment.GetEnvironmentVariable(VariableNames.JwtSecret)
-                ?? throw new InvalidOperationException($"{VariableNames.JwtSecret} is unset!");
-
             builder.Services
                 .AddAuthentication(options =>
                  {
@@ -31,7 +31,7 @@ namespace TodoAPI_MVC.Extensions
                         ValidIssuer = builder.Configuration["Jwt:Issuer"],
                         ValidAudience = builder.Configuration["Jwt:Audience"],
                         IssuerSigningKey = new SymmetricSecurityKey
-                            (Encoding.UTF8.GetBytes(jwtKey)),
+                            (Encoding.UTF8.GetBytes(variables.JwtSecret)),
                         ValidateIssuer = true,
                         ValidateAudience = true,
                         ValidateLifetime = true,
