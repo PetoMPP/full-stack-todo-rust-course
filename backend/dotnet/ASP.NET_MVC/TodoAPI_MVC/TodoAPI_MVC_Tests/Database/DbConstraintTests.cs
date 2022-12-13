@@ -1,5 +1,4 @@
-﻿using FluentAssertions;
-using TodoAPI_MVC.Database;
+﻿using TodoAPI_MVC.Database;
 using TodoAPI_MVC.Database.Service;
 
 namespace TodoAPI_MVC_Tests.Database
