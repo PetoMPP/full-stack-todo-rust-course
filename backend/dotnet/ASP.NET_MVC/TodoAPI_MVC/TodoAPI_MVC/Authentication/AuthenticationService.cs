@@ -18,12 +18,13 @@ namespace TodoAPI_MVC.Authentication
         private readonly IConfiguration _config;
         private readonly IVariables _variables;
 
-        public Guid SessionId => Guid.NewGuid();
+        public Guid SessionId { get; }
 
         public AuthenticationService(IConfiguration config, IVariables variables)
         {
             _config = config;
             _variables = variables;
+            SessionId = Guid.NewGuid();
         }
 
         public string GetToken(User user)

@@ -15,6 +15,8 @@ namespace TodoAPI_MVC.Controllers
     [Route("api/v1/[controller]")]
     public class UsersController : ApiControllerBase
     {
+        public const string LoginError = "Invalid username or password!";
+        public const string NotLoggedInError = "User is not logged in!";
         private readonly ILogger _logger;
         private readonly IRevokedTokens _revokedTokens;
         private readonly ITaskData _taskData;
@@ -57,11 +59,11 @@ namespace TodoAPI_MVC.Controllers
         {
             var user = await _userManager.FindByNameAsync(dto.Username);
             if (user is null)
-                return Unauthorized("Invalid username or password!");
+                return Unauthorized(LoginError);
 
             var result = await _signInManager.CheckPasswordSignInAsync(user, dto.Password, false);
             if (!result.Succeeded)
-                return Unauthorized("Invalid username or password!");
+                return Unauthorized(LoginError);
 
             user.Token = _authService.GetToken(user);
             return Ok(user);
@@ -69,29 +71,41 @@ namespace TodoAPI_MVC.Controllers
 
         [HttpPost("logout")]
         [AuthorizeAccess(EndpointAccess.None)]
-        public IActionResult Logout()
+        public Task<IActionResult> LogoutAsync()
         {
-            if (HttpContext.User.Identity is not ClaimsIdentity identity)
-                return BadRequest("User is not logged in!");
+            var identity = (ClaimsIdentity)HttpContext.User.Identity!;
 
-            try
+            if (identity.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Jti)?.Value is not string tokenGuidRaw)
             {
-                var tokenGuid = Guid.Parse(
-                    identity.Claims.First(c => c.Type == JwtRegisteredClaimNames.Jti).Value);
-
-                var expirationDate = DateTimeOffset.FromUnixTimeSeconds(
-                    long.Parse(identity.Claims.First(c => c.Type == JwtRegisteredClaimNames.Exp).Value))
-                    .DateTime;
-
-                _revokedTokens.Add(tokenGuid, expirationDate);
-
-                return Ok();
+                _logger.LogError("Token id not found!");
+                return Task.FromResult<IActionResult>(BadRequest(NotLoggedInError));
             }
-            catch (Exception error)
+
+            if (!Guid.TryParse(tokenGuidRaw, out var tokenGuid))
             {
-                _logger.LogError(error, "Error during claims parsing!");
-                return BadRequest("User is not logged in!");
+                _logger.LogError("Token id is not valid Guid string!");
+                return Task.FromResult<IActionResult>(BadRequest(NotLoggedInError));
             }
+
+            if (identity.Claims.FirstOrDefault(c =>
+                c.Type == JwtRegisteredClaimNames.Exp)?.Value is not string expRaw)
+            {
+                _logger.LogError("Token has no expiration set!");
+                return Task.FromResult<IActionResult>(BadRequest(NotLoggedInError));
+            }
+
+            if (!long.TryParse(expRaw, out var unixExp))
+            {
+                _logger.LogError("Token has invalid expiration format!");
+                return Task.FromResult<IActionResult>(BadRequest(NotLoggedInError));
+            }
+
+            var expirationDate = DateTimeOffset.FromUnixTimeSeconds(unixExp).DateTime;
+
+            _revokedTokens.Add(tokenGuid, expirationDate);
+
+            return Task.FromResult<IActionResult>(Ok());
         }
     }
 }
