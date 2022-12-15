@@ -59,16 +59,16 @@ jobs:
       with: 
         toolchain: stable
 
-    - name: Install wasm target
-      run: rustup target add wasm32-unknown-unknown
-
     - name: Initialize Rust cache
       uses: Swatinem/rust-cache@v2
       with:
         workspaces: ${{ env.Yew-dir }}
 
+    - name: Install wasm target
+      run: rustup target add wasm32-unknown-unknown
+
     - name: Install trunk
-      run: cargo install trunk --locked
+      run: cargo install trunk
       working-directory: ${{ env.Yew-dir }}
 
     - name: Build Yew
