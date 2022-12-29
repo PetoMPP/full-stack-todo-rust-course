@@ -50,7 +50,7 @@ namespace TodoAPI_MVC.Database.Postgres
             foreach (var task in _defaults.DefaultTasks)
             {
                 var result = await CreateAsync(task, userId, cancellationToken);
-                if (!result.IsOk)
+                if (result.Code != StatusCode.Ok)
                     return DatabaseResults.Error<TodoTask[]>(result.ErrorData);
 
                 tasks.Add(result.Data);

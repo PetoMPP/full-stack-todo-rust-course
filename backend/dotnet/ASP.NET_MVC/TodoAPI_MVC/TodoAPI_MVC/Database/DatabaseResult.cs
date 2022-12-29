@@ -7,14 +7,12 @@ namespace TodoAPI_MVC.Database
         StatusCode Code { get; init; }
         T? Data { get; init; }
         string[]? ErrorData { get; init; }
-        bool IsOk => Code == StatusCode.Ok;
     }
 
     public interface IDatabaseResult
     {
         StatusCode Code { get; init; }
         string[]? ErrorData { get; init; }
-        bool IsOk => Code == StatusCode.Ok;
     }
 
     public class DatabaseResult<T> : IDatabaseResult<T>

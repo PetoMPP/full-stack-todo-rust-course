@@ -29,7 +29,7 @@ namespace TodoAPI_MVC.Database
             new TodoTask
             {
                 Id = 0,
-                Title = "See my details for by clicking me",
+                Title = "See my details by clicking me",
                 Priority = Priority.B,
                 Description = "My description can be changed"
             },
