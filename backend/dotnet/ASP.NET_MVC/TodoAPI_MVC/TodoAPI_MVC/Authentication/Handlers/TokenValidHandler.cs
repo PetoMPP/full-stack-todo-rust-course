@@ -27,7 +27,7 @@ namespace TodoAPI_MVC.Authentication.Handlers
             AuthorizationHandlerContext context, TokenValidRequirement requirement)
         {
             var identity = (ClaimsIdentity)context.User.Identity!;
-         
+
             if (!Guid.TryParse(
                 identity.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value,
                 out var tokenId))

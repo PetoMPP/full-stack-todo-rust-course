@@ -33,7 +33,7 @@ namespace TodoAPI_MVC.Json
 
                 if (reader.TokenType == JsonTokenType.Null)
                     return null;
-                
+
                 throw new JsonTokenException(
                     reader.TokenType, null, JsonTokenType.String, JsonTokenType.Null);
             }

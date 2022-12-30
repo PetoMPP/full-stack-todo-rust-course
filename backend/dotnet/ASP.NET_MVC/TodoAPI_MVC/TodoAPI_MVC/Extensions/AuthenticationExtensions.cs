@@ -73,7 +73,6 @@ namespace TodoAPI_MVC.Extensions
         {
             foreach (var access in Enum.GetValues<EndpointAccess>())
             {
-
                 var name = $"{access}";
                 var allowedValues = $"{(int)access}";
                 o.AddPolicy(name, p => CreatePolicy(p, access));

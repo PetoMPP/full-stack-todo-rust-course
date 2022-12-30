@@ -20,7 +20,7 @@ namespace TodoAPI_MVC.Authentication.Handlers
             var errors = context.Response.Headers["error"];
             if (!context.Response.Headers.Remove("error"))
                 return;
-                
+
             await context.Response.WriteAsJsonAsync(
                 new { Error = string.Join(", ", errors) }, _jsonSerializerOptions);
         }

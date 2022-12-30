@@ -7,7 +7,7 @@ namespace TodoAPI_MVC_Tests.Attributes
         [Test]
         public void Ctor_ShouldAssignCorrectPropertyName_OnValidColumnName()
         {
-            var columnName = "propName";
+            const string columnName = "propName";
 
             var attribute = new DbNameAttribute(columnName);
 
@@ -17,7 +17,7 @@ namespace TodoAPI_MVC_Tests.Attributes
         [Test]
         public void Ctor_ShouldThrowArgumentException_OnInvalidColumnName()
         {
-            var columnName = "";
+            const string columnName = "";
 
             var ctorAction = () => new DbNameAttribute(columnName);
 

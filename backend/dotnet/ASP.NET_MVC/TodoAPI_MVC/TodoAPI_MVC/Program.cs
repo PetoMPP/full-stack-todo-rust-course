@@ -10,7 +10,7 @@ using TodoAPI_MVC.Services;
 
 namespace TodoAPI_MVC
 {
-    public class Program
+    public static class Program
     {
         public static async Task Main(string[] args)
         {
@@ -35,9 +35,7 @@ namespace TodoAPI_MVC
             var builder = WebApplication.CreateBuilder(args);
 
             builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
-            {
-                p.WithMethods("*").WithHeaders("*").WithOrigins("*");
-            }));
+                p.WithMethods("*").WithHeaders("*").WithOrigins("*")));
 
             builder.AddJwtAuthentication(jsonSerializerOptions, variables);
             builder.Services.AddDbServiceOptions(

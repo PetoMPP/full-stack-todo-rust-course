@@ -14,8 +14,10 @@ namespace TodoAPI_MVC.Database
         public DbConstraint(IDbService dbService, LambdaExpression conditionalExpression)
         {
             if (conditionalExpression.Body is not BinaryExpression binaryExpression)
+            {
                 throw new InvalidOperationException(
                     $"Expression should be of type {nameof(BinaryExpression)}");
+            }
 
             _logicalOperator = "";
             _dbService = dbService;
@@ -60,7 +62,7 @@ namespace TodoAPI_MVC.Database
                     $"The '{binaryExpression.NodeType}' operator in is not supported!"),
             };
 
-            _stringBuilder.Append($" {_logicalOperator} ");
+            _stringBuilder.Append(' ').Append(_logicalOperator).Append(' ');
 
             switch (binaryExpression.Right)
             {

@@ -33,6 +33,14 @@ namespace TodoAPI_MVC.Json
         {
         }
 
+        public JsonTokenException(string? message) : base(message)
+        {
+        }
+
+        public JsonTokenException(string? message, Exception? innerException) : base(message, innerException)
+        {
+        }
+
         private static string GetMessage(JsonTokenType actual, JsonTokenType expected)
             => $"Unexpected token! Expected {expected}, got {actual}";
 

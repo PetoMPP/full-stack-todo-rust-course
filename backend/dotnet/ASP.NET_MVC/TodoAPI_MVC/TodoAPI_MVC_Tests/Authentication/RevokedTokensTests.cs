@@ -22,7 +22,9 @@ namespace TodoAPI_MVC_Tests.Authentication
                 tokens.Count.Should().Be(1);
             }
             else
+            {
                 delayMs = AssertionDelayMs;
+            }
 
             await Task.Delay(delayMs);
             tokens.Should().BeEmpty();

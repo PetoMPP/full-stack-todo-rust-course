@@ -8,7 +8,7 @@ namespace TodoAPI_MVC.Authentication.Handlers
     {
         protected readonly ILogger _logger;
 
-        public VerboseAuthorizationHandler(ILogger logger)
+        protected VerboseAuthorizationHandler(ILogger logger)
         {
             _logger = logger;
         }

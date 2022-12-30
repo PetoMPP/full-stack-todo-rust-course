@@ -13,7 +13,7 @@ namespace TodoAPI_MVC_Tests.Authentication.Handlers
         [Test]
         public async Task MessageRecievedHandler_ShouldAddToken_OnValidMessageRecieved()
         {
-            var token = "thisisjustan.exampletoken.ok";
+            const string token = "thisisjustan.exampletoken.ok";
             var handler = new AuthEventsHandler(new JsonSerializerOptions());
             var httpContext = new DefaultHttpContext();
             httpContext.Request.Headers.Add("x-auth-token", token);

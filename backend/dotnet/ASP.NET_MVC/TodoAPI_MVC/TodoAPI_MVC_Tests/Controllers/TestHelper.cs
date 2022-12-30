@@ -7,7 +7,7 @@ using TodoAPI_MVC.Models;
 
 namespace TodoAPI_MVC_Tests.Controllers
 {
-    internal class TestHelper
+    internal static class TestHelper
     {
         internal const string Error = "error";
 
@@ -62,14 +62,14 @@ namespace TodoAPI_MVC_Tests.Controllers
 
             mock
                 .Setup(m => m.FindByIdAsync(It.IsAny<string>()))!
-                .ReturnsAsync((string id) => 
+                .ReturnsAsync((string id) =>
                     shouldFail ? null : new User { Id = int.Parse(id) });
 
             mock
                 .Setup(m => m.CreateAsync(It.IsAny<User>(), It.IsAny<string>()))!
-                .Callback((User user, string password) =>
+                .Callback((User user, string _) =>
                     user.NormalizedUsername = user.Username.ToUpperInvariant())
-                .ReturnsAsync((User user, string _) => shouldFail
+                .ReturnsAsync((User _, string _) => shouldFail
                     ? IdentityResult.Failed(error is string errorString
                         ? new[] { new IdentityError { Description = errorString } }
                         : Array.Empty<IdentityError>())

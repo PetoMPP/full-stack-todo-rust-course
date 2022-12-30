@@ -25,13 +25,13 @@ namespace TodoAPI_MVC.Database.Memory
 
         public Task<User> FindByIdAsync(string userId, CancellationToken cancellationToken)
         {
-            var user = _users.FirstOrDefault(u => $"{u.Id}" == userId);
+            var user = _users.Find(u => $"{u.Id}" == userId);
             return Task.FromResult(user)!;
         }
 
         public Task<User> FindByNameAsync(string normalizedUserName, CancellationToken cancellationToken)
         {
-            var user = _users.FirstOrDefault(u => u.NormalizedUsername == normalizedUserName);
+            var user = _users.Find(u => u.NormalizedUsername == normalizedUserName);
             return Task.FromResult(user)!;
         }
 
