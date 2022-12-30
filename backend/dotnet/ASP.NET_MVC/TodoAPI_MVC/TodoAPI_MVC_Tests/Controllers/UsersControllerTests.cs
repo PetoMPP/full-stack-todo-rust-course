@@ -37,7 +37,7 @@ namespace TodoAPI_MVC_Tests.Controllers
         [Test]
         public async Task RegisterAsync_ShouldReturnErrorString_OnFailure()
         {
-            var error = "it is not allowed";
+            const string error = "it is not allowed";
             var userManagerMock = TestHelper.GetUserManagerMock(true, error);
             var testDto = new UserDto("user", "pw");
             var controller = GetController(userManagerMock: userManagerMock);
@@ -226,7 +226,7 @@ namespace TodoAPI_MVC_Tests.Controllers
                     StatusCode.Ok,
                     false,
                     new[]
-                    { 
+                    {
                         new TodoTask { Id = 1, Title = "1" },
                         new TodoTask { Id = 2, Title = "2" }
                     }

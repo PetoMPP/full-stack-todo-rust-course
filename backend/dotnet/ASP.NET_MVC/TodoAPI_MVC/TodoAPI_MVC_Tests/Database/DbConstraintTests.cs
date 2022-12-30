@@ -1,5 +1,4 @@
-﻿using System.Linq.Expressions;
-using System.Reflection;
+﻿using System.Diagnostics.CodeAnalysis;
 using TodoAPI_MVC.Atributtes;
 using TodoAPI_MVC.Database;
 using TodoAPI_MVC.Database.Service;
@@ -8,9 +7,6 @@ namespace TodoAPI_MVC_Tests.Database
 {
     public class DbConstraintTests
     {
-        private delegate int TestHandler();
-        private event TestHandler? TestEvent;
-
         private enum Testum
         {
             Yes,
@@ -25,19 +21,19 @@ namespace TodoAPI_MVC_Tests.Database
         public void Ctor_ShouldBuildProperSqlString_FromNormalTypes()
         {
             var dbService = new DbService();
-            var number = 69;
-            var text = "Just bee yourself!";
-            var testum = Testum.Yes;
+            const int number = 69;
+            const string text = "Just bee yourself!";
+            const Testum testum = Testum.Yes;
             var test = new Test(number, text, testum);
             var constraint = new DbConstraint(
                 dbService,
                 (Test t) =>
-                t.Number <= test.Number &&
-                t.Text != "text" ||
-                t.Testum > testum &&
-                t.Number >= Math.Max(number, 85));
+                (t.Number <= test.Number &&
+                t.Text != "text") ||
+                (t.Testum > testum &&
+                t.Number >= Math.Max(number, 85)));
 
-            var expected =
+            const string expected =
                 "number <= 69 AND " +
                 "text != 'text' OR " +
                 "testum > 0 AND " +
@@ -50,16 +46,16 @@ namespace TodoAPI_MVC_Tests.Database
         public void Ctor_ShouldBuildProperSqlString_FromNullableTypes()
         {
             var dbService = new DbService();
-            var number = 69;
+            const int number = 69;
             var test = new TestNullable(number, null, null);
             var constraint = new DbConstraint(
                 dbService,
                 (TestNullable t) =>
-                t.Number == GetNumber(number) &&
-                t.Text != null ||
-                t.Testum < Testum.Maybe &&
-                t.Number == null);
-            var expected =
+                (t.Number == GetNumber(number) &&
+                t.Text != null) ||
+                (t.Testum < Testum.Maybe &&
+                t.Number == null));
+            const string expected =
                 "number = 69 AND " +
                 "text is not null OR " +
                 "testum < 1 AND " +
@@ -91,6 +87,7 @@ namespace TodoAPI_MVC_Tests.Database
         }
 
         [Test]
+        [SuppressMessage("Roslynator", "RCS1033:Remove redundant boolean literal.", Justification = "Invalid test case")]
         public void Ctor_ShouldThrowNotSupportedException_OnInvalidLeftExpression()
         {
             var dbService = new DbService();

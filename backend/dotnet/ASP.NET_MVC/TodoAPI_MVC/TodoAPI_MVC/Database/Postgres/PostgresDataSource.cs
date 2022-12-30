@@ -181,9 +181,11 @@ namespace TodoAPI_MVC.Database.Postgres
                         if (value.GetType().IsAssignableTo(propertyData.PropertyInfo.PropertyType))
                             propertyData.PropertyInfo.SetValue(item, value);
 
-                        if (propertyType.IsEnum && value is string stringValue)
-                            if (Enum.TryParse(propertyType, stringValue, out var enumValue))
-                                propertyData.PropertyInfo.SetValue(item, enumValue);
+                        if (propertyType.IsEnum && value is string stringValue &&
+                            Enum.TryParse(propertyType, stringValue, out var enumValue))
+                        {
+                            propertyData.PropertyInfo.SetValue(item, enumValue);
+                        }
 
                         if (propertyType.IsEnum && value is int intValue)
                             propertyData.PropertyInfo.SetValue(item, intValue);
@@ -210,16 +212,16 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             var builder = new StringBuilder();
             var setterString = string.Join(
-                ", ", propertiesData.Select(p => 
+                ", ", propertiesData.Select(p =>
                     $"{p.SqlName} = {_dbService.GetSqlValue(p.PropertyInfo.GetValue(value))}"));
 
-            builder.Append($"UPDATE {tableName} SET {setterString}");
+            builder.Append("UPDATE ").Append(tableName).Append(" SET ").Append(setterString);
 
             if (sqlFilter is not null)
-                builder.Append($" WHERE {sqlFilter}");
+                builder.Append(" WHERE ").Append(sqlFilter);
 
             if (returning)
-                builder.Append($" RETURNING {string.Join(", ", propertiesData.Select(p => p.SqlName))}");
+                builder.Append(" RETURNING ").AppendJoin(", ", propertiesData.Select(p => p.SqlName));
 
             return builder.ToString();
         }
@@ -229,16 +231,16 @@ namespace TodoAPI_MVC.Database.Postgres
         {
             var columnNames = propertiesData.Select(p => p.SqlName);
             var builder = new StringBuilder();
-            builder.Append($"INSERT INTO {tableName} ({string.Join(", ", columnNames)}) ");
+            builder.Append("INSERT INTO ").Append(tableName).Append(" (").AppendJoin(", ", columnNames).Append(") ");
             builder.Append("VALUES ");
 
             foreach (var value in values)
-                builder.Append($"({string.Join(", ", propertiesData.Select(p => _dbService.GetSqlValue(p.PropertyInfo.GetValue(value))))}),");
+                builder.Append('(').AppendJoin(", ", propertiesData.Select(p => _dbService.GetSqlValue(p.PropertyInfo.GetValue(value)))).Append("),");
 
             builder.Length--;
 
             if (returning)
-                builder.Append($" RETURNING {string.Join(", ", columnNames)}");
+                builder.Append(" RETURNING ").AppendJoin(", ", columnNames);
 
             return builder.ToString();
         }
@@ -270,14 +272,16 @@ namespace TodoAPI_MVC.Database.Postgres
             {
                 if (columnSchema.FirstOrDefault(c => CompareNames(c, propertyData)) is NpgsqlDbColumn column &&
                     column.ColumnOrdinal is int ordinal)
+                {
                     result[ordinal] = propertyData;
+                }
             }
 
             return result;
 
             static bool CompareNames(NpgsqlDbColumn col, PropertyData propertyData)
             {
-                return col.ColumnName.ToUpperInvariant() == propertyData.SqlName.ToUpperInvariant();
+                return string.Equals(col.ColumnName, propertyData.SqlName, StringComparison.InvariantCultureIgnoreCase);
             }
         }
     }

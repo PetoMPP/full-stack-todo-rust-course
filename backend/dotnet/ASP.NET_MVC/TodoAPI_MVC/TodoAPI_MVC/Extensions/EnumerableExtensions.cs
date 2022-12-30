@@ -10,7 +10,7 @@ namespace TodoAPI_MVC.Extensions
             if (!source.Any())
                 return startFrom;
 
-            return source.Select(selector).Max() + step;
+            return source.Max(selector) + step;
         }
 
         public static bool TryGetValueAt<T>(

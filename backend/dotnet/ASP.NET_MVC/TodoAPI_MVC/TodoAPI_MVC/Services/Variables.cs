@@ -1,6 +1,5 @@
 ﻿namespace TodoAPI_MVC.Services
 {
-
     internal class Variables : IVariables
     {
         private const string DatabaseModeName = "DB_MODE";
@@ -10,10 +9,10 @@
         private const string ApiAdminUserName = "API_ADMIN_USER";
         private const string ApiAdminPasswordName = "API_ADMIN_PASSWORD";
 
-        public string DatabaseMode 
-        { 
+        public string DatabaseMode
+        {
             get => GetEnvironmentVariable(DatabaseModeName);
-            set => SetEnvironmentVariable(DatabaseModeName, value); 
+            set => SetEnvironmentVariable(DatabaseModeName, value);
         }
 
         public string DatabaseUser

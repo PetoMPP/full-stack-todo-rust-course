@@ -8,8 +8,10 @@
         public DbNameAttribute(string columnName)
         {
             if (string.IsNullOrWhiteSpace(columnName))
+            {
                 throw new ArgumentException(
                     $"{nameof(columnName)} cannot be empty!", nameof(columnName));
+            }
 
             ColumnName = columnName;
         }

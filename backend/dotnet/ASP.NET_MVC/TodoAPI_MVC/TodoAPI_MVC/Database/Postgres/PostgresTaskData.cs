@@ -120,7 +120,7 @@ namespace TodoAPI_MVC.Database.Postgres
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
-                return DatabaseResults.Ok(tasks.First());
+                return DatabaseResults.Ok(tasks[0]);
             }
             catch (Exception error)
             {
@@ -150,7 +150,7 @@ namespace TodoAPI_MVC.Database.Postgres
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
-                return DatabaseResults.Ok(tasks.First());
+                return DatabaseResults.Ok(tasks[0]);
             }
             catch (Exception error)
             {
@@ -183,7 +183,7 @@ namespace TodoAPI_MVC.Database.Postgres
                 if (!tasks.Any())
                     return DatabaseResults.Error<TodoTask>("Task not found!");
 
-                return DatabaseResults.Ok(tasks.First());
+                return DatabaseResults.Ok(tasks[0]);
             }
             catch (Exception error)
             {

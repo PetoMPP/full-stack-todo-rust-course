@@ -16,7 +16,7 @@ namespace TodoAPI_MVC_Tests.Authentication.Handlers
         [Test]
         public async Task HandleRequirement_ShouldSucceed_OnValidAccess()
         {
-            var access = EndpointAccess.TasksOwned;
+            const EndpointAccess access = EndpointAccess.TasksOwned;
             var requirement = new AccessRequirement(access);
             var userClaims = new List<Claim>() { new Claim("Access", $"{(int)access}")};
             var context = TestsHelper.GetAuthorizationHandlerContext(
@@ -30,7 +30,7 @@ namespace TodoAPI_MVC_Tests.Authentication.Handlers
         [Test]
         public async Task HandleRequirement_ShouldFailAndCreateErrorHeader_OnAccessMissingAndHttpContextAvailable()
         {
-            var access = EndpointAccess.TasksOwned;
+            const EndpointAccess access = EndpointAccess.TasksOwned;
             var requirement = new AccessRequirement(access);
             var httpContext = new DefaultHttpContext();
             var context = TestsHelper.GetAuthorizationHandlerContext(
@@ -49,9 +49,9 @@ namespace TodoAPI_MVC_Tests.Authentication.Handlers
         [Test]
         public async Task HandleRequirement_ShouldFail_OnAccessUnmet()
         {
-            var userAccess = EndpointAccess.TasksOwned;
+            const EndpointAccess userAccess = EndpointAccess.TasksOwned;
             var userClaims = new List<Claim>() { new Claim("Access", $"{(int)userAccess}")};
-            var requiredAccess = EndpointAccess.TasksAll;
+            const EndpointAccess requiredAccess = EndpointAccess.TasksAll;
             var requirement = new AccessRequirement(requiredAccess);
             var context = TestsHelper.GetAuthorizationHandlerContext(
                 requirement, userClaims, false);
@@ -66,7 +66,7 @@ namespace TodoAPI_MVC_Tests.Authentication.Handlers
         [Test]
         public async Task HandleRequirement_ShouldFail_OnAccessUnparsable()
         {
-            var access = EndpointAccess.TasksOwned;
+            const EndpointAccess access = EndpointAccess.TasksOwned;
             var requirement = new AccessRequirement(access);
             var userClaims = new List<Claim>() { new Claim("Access", $"{access}") };
             var context = TestsHelper.GetAuthorizationHandlerContext(

@@ -20,7 +20,7 @@ namespace TodoAPI_MVC_Tests.Json
 
             var convertAction = (Utf8JsonReader reader) => converter.Read(
                 ref reader, typeof(DateTime?), new JsonSerializerOptions());
-            
+
             utf8JsonReader.Read();
 
             convertAction(utf8JsonReader);

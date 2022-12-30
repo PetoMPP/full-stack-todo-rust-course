@@ -23,7 +23,7 @@ namespace TodoAPI_MVC_Tests.Attributes
         public void Ctor_ShouldThrowOnConverterType_WhenDoesntInhereitsFromDbValueConverter()
         {
             var testType = typeof(object);
-            
+
             var ctorAction = () => new DbValueConverterAttribute(testType);
 
             ctorAction.Should().ThrowExactly<ArgumentException>();
