@@ -10,7 +10,7 @@ namespace TodoAPI_MVC.Authentication
     public interface IAuthenticationService
     {
         string GetToken(User user);
-        static Guid SessionId { get; } = Guid.NewGuid();
+        Guid SessionId { get; }
     }
 
     public class AuthenticationService : IAuthenticationService
@@ -18,10 +18,13 @@ namespace TodoAPI_MVC.Authentication
         private readonly IConfiguration _config;
         private readonly IVariables _variables;
 
+        public Guid SessionId { get; }
+
         public AuthenticationService(IConfiguration config, IVariables variables)
         {
             _config = config;
             _variables = variables;
+            SessionId = Guid.NewGuid();
         }
 
         public string GetToken(User user)
@@ -38,7 +41,7 @@ namespace TodoAPI_MVC.Authentication
                 Subject = new ClaimsIdentity(new[]
                 {
                     new Claim("Id", $"{user.Id}"),
-                    new Claim("SessionId", $"{IAuthenticationService.SessionId}"),
+                    new Claim("SessionId", $"{SessionId}"),
                     new Claim("Access", $"{(int)user.Access}"),
                     new Claim(JwtRegisteredClaimNames.Sub, user.Username),
                     new Claim(JwtRegisteredClaimNames.Jti, $"{Guid.NewGuid()}")

@@ -26,10 +26,10 @@ namespace TodoAPI_MVC.Controllers
 
         protected async Task<User?> GetCurrentUser()
         {
-            if (HttpContext.User.Identity is not ClaimsIdentity identity)
-                return null;
+            var identity = (ClaimsIdentity)HttpContext.User.Identity!;
 
-            var userId = identity.Claims.First(c => c.Type == "Id")?.Value;
+            if (identity.Claims.FirstOrDefault(c => c.Type == "Id")?.Value is not string userId)
+                return null;
 
             return await _userManager.FindByIdAsync(userId);
         }
@@ -38,10 +38,9 @@ namespace TodoAPI_MVC.Controllers
         {
             return dbResult.Code switch
             {
-                Models.StatusCode.Ok => Ok(dbResult.Data),
-                Models.StatusCode.Error => BadRequest(
-                    string.Join(Environment.NewLine, dbResult.ErrorData ?? Array.Empty<string>())),
-                _ => StatusCode(500)
+                Models.StatusCode.Ok => base.Ok(dbResult.Data),
+                Models.StatusCode.Error => base.BadRequest(GetErrorString(dbResult.ErrorData)),
+                _ => base.StatusCode(500, GetErrorString(dbResult.ErrorData))
             };
         }
 
@@ -50,10 +49,14 @@ namespace TodoAPI_MVC.Controllers
             return dbResult.Code switch
             {
                 Models.StatusCode.Ok => Ok(),
-                Models.StatusCode.Error => BadRequest(
-                    string.Join(Environment.NewLine, dbResult.ErrorData ?? Array.Empty<string>())),
-                _ => StatusCode(500)
+                Models.StatusCode.Error => BadRequest(GetErrorString(dbResult.ErrorData)),
+                _ => StatusCode(500, GetErrorString(dbResult.ErrorData))
             };
+        }
+
+        private static string GetErrorString(string[]? errorData)
+        {
+            return string.Join(Environment.NewLine, errorData ?? Array.Empty<string>());
         }
     }
 }

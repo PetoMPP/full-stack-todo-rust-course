@@ -10,7 +10,9 @@ namespace TodoAPI_MVC.Atributtes
         public DbValueConverterAttribute(Type converterType)
         {
             if (!converterType.IsAssignableTo(typeof(DbValueConverter)))
-                throw new InvalidOperationException();
+                throw new ArgumentException(
+                    $"{converterType} should derive from {nameof(DbValueConverter)}!",
+                    nameof(converterType));
 
             ConverterType = converterType;
         }

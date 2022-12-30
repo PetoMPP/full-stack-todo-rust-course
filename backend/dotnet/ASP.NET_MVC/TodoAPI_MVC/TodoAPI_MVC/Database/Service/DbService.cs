@@ -54,13 +54,10 @@ namespace TodoAPI_MVC.Database.Service
                 return false;
             }
 
-            if (skipDefaultProperties)
+            if (skipDefaultProperties && member.GetCustomAttribute<DbDefaultAttribute>() is not null)
             {
-                if (member.GetCustomAttribute<DbDefaultAttribute>() is not null)
-                {
-                    attributeName = nameof(DbDefaultAttribute);
-                    return false;
-                }
+                attributeName = nameof(DbDefaultAttribute);
+                return false;
             }
 
             sqlName = member.GetCustomAttribute<DbNameAttribute>() is DbNameAttribute nameAttribute

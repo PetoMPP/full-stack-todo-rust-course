@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using System.Text.Json;
+using TodoAPI_MVC.Database;
 using TodoAPI_MVC.Extensions;
 using TodoAPI_MVC.Json;
 using TodoAPI_MVC.Middleware;
@@ -18,20 +19,11 @@ namespace TodoAPI_MVC
 
         #if DEBUG
 
-            Environment.SetEnvironmentVariable(
-                variables.DatabaseMode, "postgres");
-
-            Environment.SetEnvironmentVariable(
-                variables.DatabaseUser, "postgres");
-
-            Environment.SetEnvironmentVariable(
-                variables.DatabasePassword, "12345");
-
-            Environment.SetEnvironmentVariable(
-                variables.ApiAdminUser, "admin");
-
-            Environment.SetEnvironmentVariable(
-                variables.ApiAdminPassword, "Adm1n!");
+            variables.DatabaseMode = "postgres";
+            variables.DatabaseUser = "postgres";
+            variables.DatabasePassword = "12345";
+            variables.ApiAdminUser = "admin";
+            variables.ApiAdminPassword = "Adm1n!";
 
         #endif
 
@@ -47,13 +39,13 @@ namespace TodoAPI_MVC
                 p.WithMethods("*").WithHeaders("*").WithOrigins("*");
             }));
 
-
             builder.AddJwtAuthentication(jsonSerializerOptions, variables);
             builder.Services.AddDbServiceOptions(
                 new(new Database.Service.SnakeCaseNamingPolicy()));
 
             builder.Services.AddDatabaseContext(variables);
             builder.Services.AddSingleton<IVariables>(variables);
+            builder.Services.AddSingleton<IDefaults, Defaults>();
             builder.Services.AddScoped<DatabaseInitializor>();
 
             builder.Services.AddIdentityCore<User>()
@@ -82,7 +74,10 @@ namespace TodoAPI_MVC
             app.MapControllers();
             app.UseResponseWrapper();
 
-            var databaseInitializor = app.Services.CreateScope().ServiceProvider.GetRequiredService<DatabaseInitializor>();
+            var databaseInitializor = app.Services
+                .CreateScope().ServiceProvider
+                .GetRequiredService<DatabaseInitializor>();
+
             await databaseInitializor.StartAsync(CancellationToken.None);
 
             app.Run();

@@ -28,7 +28,10 @@ namespace TodoAPI_MVC.Authentication.Handlers
         private Task MessageReceivedHandler(MessageReceivedContext context)
         {
             if (!context.Request.Headers.TryGetValue("x-auth-token", out var headerValue))
+            {
                 context.NoResult();
+                return Task.CompletedTask;
+            }
 
             context.Token = headerValue;
 

@@ -6,50 +6,54 @@ namespace TodoAPI_MVC.Authentication.Handlers
 {
     public class TokenValidHandler : VerboseAuthorizationHandler<TokenValidRequirement>
     {
+        protected const string SchemaMissingMessage = "User doesn't have identity schema!";
+        protected const string InvalidIdentityIdMessage = "Invalid identity Id!";
+        protected const string InvalidSessionIdMessage = "Invalid identity session Id!";
+        protected const string InvalidTokenMessage = "Invalid identity token!";
+
+        private readonly IAuthenticationService _authenticationService;
         private readonly IRevokedTokens _revokedTokens;
 
         public TokenValidHandler(
+            IAuthenticationService authenticationService,
             IRevokedTokens revokedTokens,
             ILogger<TokenValidHandler> logger) : base(logger)
         {
+            _authenticationService = authenticationService;
             _revokedTokens = revokedTokens;
         }
 
         protected override Task HandleRequirementAsync(
             AuthorizationHandlerContext context, TokenValidRequirement requirement)
         {
-            if (context.User.Identity is not ClaimsIdentity identity)
-            {
-                FailAndCryAboutIt(context, "User doesn't have identity schema!");
-                return Task.CompletedTask;
-            }
+            var identity = (ClaimsIdentity)context.User.Identity!;
          
             if (!Guid.TryParse(
                 identity.Claims.FirstOrDefault(c => c.Type == JwtRegisteredClaimNames.Jti)?.Value,
                 out var tokenId))
             {
-                FailAndCryAboutIt(context, "Invalid identity Id!");
+                FailAndCryAboutIt(context, InvalidIdentityIdMessage);
             }
 
             if (!Guid.TryParse(
                 identity.Claims.FirstOrDefault(c => c.Type == "SessionId")?.Value,
                 out var sessionId))
             {
-                FailAndCryAboutIt(context, "Invalid identity session Id!");
+                FailAndCryAboutIt(context, InvalidSessionIdMessage);
             }
 
             if (context.HasFailed)
                 return Task.CompletedTask;
 
-            if (sessionId != IAuthenticationService.SessionId)
+            if (sessionId != _authenticationService.SessionId)
             {
-                FailAndCryAboutIt(context, "Invalid identity session Id!");
+                FailAndCryAboutIt(context, InvalidSessionIdMessage);
                 return Task.CompletedTask;
             }
 
             if (_revokedTokens.Contains(tokenId))
             {
-                FailAndCryAboutIt(context, "Invalid identity token!");
+                FailAndCryAboutIt(context, InvalidTokenMessage);
                 return Task.CompletedTask;
             }
 

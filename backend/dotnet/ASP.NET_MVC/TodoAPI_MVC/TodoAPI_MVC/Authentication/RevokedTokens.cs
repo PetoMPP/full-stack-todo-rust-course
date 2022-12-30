@@ -25,20 +25,14 @@ namespace TodoAPI_MVC.Authentication
         public void Add(Guid guid, DateTime expirationTime)
         {
             _tokens.Add(guid);
-            DeletionRequired?.Invoke(guid, expirationTime - DateTime.UtcNow);
+            DeletionRequired!.Invoke(guid, expirationTime - DateTime.UtcNow);
         }
 
         private async void InvalidatedTokens_DeletionRequired(Guid guid, TimeSpan delay)
         {
-            try
-            {
-                delay = delay >= TimeSpan.Zero ? delay : TimeSpan.Zero;
-                await Task.Delay(delay);
-                _tokens.Remove(guid);
-            }
-            catch (Exception)
-            {
-            }
+            delay = delay >= TimeSpan.Zero ? delay : TimeSpan.Zero;
+            await Task.Delay(delay);
+            _tokens.Remove(guid);
         }
 
         public IEnumerator<Guid> GetEnumerator() => _tokens.GetEnumerator();

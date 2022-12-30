@@ -18,12 +18,14 @@ namespace TodoAPI_MVC.Authentication.Handlers
             context.Fail(new(this, message));
             _logger.LogWarning(null, "{}", message);
 
-            if (context.User.Identity?.IsAuthenticated == true &&
-                context.Resource is HttpContext httpContext)
+            if (!context.User.Identity!.IsAuthenticated ||
+                context.Resource is not HttpContext httpContext)
             {
-                var errors = httpContext.Response.Headers["error"].Append(message);
-                httpContext.Response.Headers["error"] = new StringValues(errors.ToArray());
+                return;
             }
+
+            var errors = httpContext.Response.Headers["error"].Append(message);
+            httpContext.Response.Headers["error"] = new StringValues(errors.ToArray());
         }
     }
 }

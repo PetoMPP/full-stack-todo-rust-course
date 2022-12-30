@@ -29,15 +29,22 @@ namespace TodoAPI_MVC.Database
 
         private void ParseBinaryExpression(BinaryExpression binaryExpression)
         {
-            if (binaryExpression.Left is BinaryExpression leftBinaryExpression)
-                ParseBinaryExpression(leftBinaryExpression);
-
-            if (binaryExpression.Left is MemberExpression leftMemberExpression)
-                ParseMemberExpression(leftMemberExpression);
-
-            if (binaryExpression.Left is UnaryExpression leftUnaryExpression)
-                if (leftUnaryExpression.Operand is MemberExpression leftInnerMemberExpression)
+            switch (binaryExpression.Left)
+            {
+                case BinaryExpression leftBinaryExpression:
+                    ParseBinaryExpression(leftBinaryExpression);
+                    break;
+                case MemberExpression leftMemberExpression:
+                    ParseMemberExpression(leftMemberExpression);
+                    break;
+                case UnaryExpression leftUnaryExpression
+                when leftUnaryExpression.Operand is MemberExpression leftInnerMemberExpression:
                     ParseMemberExpression(leftInnerMemberExpression);
+                    break;
+                default:
+                    throw new NotSupportedException(
+                        $"Expression of type: '{binaryExpression.Left.GetType()}' are not supported!");
+            }
 
             _logicalOperator = binaryExpression.NodeType switch
             {
@@ -49,31 +56,41 @@ namespace TodoAPI_MVC.Database
                 ExpressionType.NotEqual => "!=",
                 ExpressionType.AndAlso => "AND",
                 ExpressionType.OrElse => "OR",
-                _ => "",
+                _ => throw new NotSupportedException(
+                    $"The '{binaryExpression.NodeType}' operator in is not supported!"),
             };
 
-            if (!string.IsNullOrEmpty(_logicalOperator))
-                _stringBuilder.Append($" {_logicalOperator} ");
+            _stringBuilder.Append($" {_logicalOperator} ");
 
-            if (binaryExpression.Right is BinaryExpression rightBinaryExpression)
-                ParseBinaryExpression(rightBinaryExpression);
-
-            if (binaryExpression.Right is MemberExpression rightMemberExpression)
-                ParseMemberExpression(rightMemberExpression);
-
-            if (binaryExpression.Right is ConstantExpression rightConstantExpression)
-                ParseConstantExpression(rightConstantExpression);
-
-            if (binaryExpression.Right is MethodCallExpression rightCallExpression)
-                ParseMethodCallExpression(rightCallExpression);
-
-            if (binaryExpression.Right is UnaryExpression rightUnaryExpression)
+            switch (binaryExpression.Right)
             {
-                if (rightUnaryExpression.Operand is MemberExpression rightInnerMemberExpression)
+                case BinaryExpression rightBinaryExpression:
+                    ParseBinaryExpression(rightBinaryExpression);
+                    break;
+                case MemberExpression rightMemberExpression:
+                    ParseMemberExpression(rightMemberExpression);
+                    break;
+                case ConstantExpression rightConstantExpression:
+                    ParseConstantExpression(rightConstantExpression);
+                    break;
+                case MethodCallExpression rightCallExpression:
+                    ParseMethodCallExpression(rightCallExpression);
+                    break;
+                case UnaryExpression rightUnaryExpression
+                when rightUnaryExpression.Operand is MemberExpression rightInnerMemberExpression:
                     ParseMemberExpression(rightInnerMemberExpression);
-
-                if (rightUnaryExpression.Operand is MethodCallExpression rightInnerCallExpression)
+                    break;
+                case UnaryExpression rightUnaryExpression
+                when rightUnaryExpression.Operand is MethodCallExpression rightInnerCallExpression:
                     ParseMethodCallExpression(rightInnerCallExpression);
+                    break;
+                case UnaryExpression rightUnaryExpression
+                when rightUnaryExpression.Operand is ConstantExpression rightInnerConstantExpression:
+                    ParseConstantExpression(rightInnerConstantExpression);
+                    break;
+                default:
+                    throw new NotSupportedException(
+                        $"Expression of type: '{binaryExpression.Right.Type}' are not supported!");
             }
         }
 
@@ -91,43 +108,38 @@ namespace TodoAPI_MVC.Database
 
         private void ParseMemberExpression(MemberExpression memberExpression)
         {
-            if (memberExpression.Expression?.NodeType == ExpressionType.Parameter)
+            switch (memberExpression.Expression)
             {
-                if (!_dbService.TryGetSqlName(
-                    memberExpression.Member, false, out var paramName, out var attributeName))
-                {
-                    throw new InvalidOperationException($"Property has {attributeName}!");
-                }
+                case { NodeType: ExpressionType.Parameter }:
+                    if (!_dbService.TryGetSqlName(
+                        memberExpression.Member, false, out var paramName, out var attributeName))
+                    {
+                        throw new InvalidOperationException($"Property has {attributeName}!");
+                    }
 
-                _stringBuilder.Append(paramName);
-            }
-            else if (memberExpression.Expression is MemberExpression or ConstantExpression)
-            {
-                ParseInnerExpression(memberExpression.Expression, memberExpression.Member);
-            }
-            else
-            {
-                throw new InvalidOperationException("Unable to parse MemberExpression!");
+                    _stringBuilder.Append(paramName);
+                    break;
+                case MemberExpression or ConstantExpression:
+                    ParseInnerExpression(memberExpression.Expression, memberExpression.Member);
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unable to parse {memberExpression.Expression?.GetType()}!");
             }
         }
 
         private void ParseInnerExpression(Expression innerExpression, MemberInfo member)
         {
-            object? value;
-            if (member is PropertyInfo propertyInfo)
+            var value = member switch
             {
-                value = propertyInfo.GetValue(
-                    Expression.Lambda(innerExpression).Compile().DynamicInvoke());
-            }
-            else if (member is FieldInfo fieldInfo)
-            {
-                value = fieldInfo.GetValue(
-                    Expression.Lambda(innerExpression).Compile().DynamicInvoke());
-            }
-            else
-            {
-                throw new InvalidOperationException("Unable to parse inner expression!");
-            }
+                PropertyInfo propertyInfo => propertyInfo.GetValue(
+                    Expression.Lambda(innerExpression).Compile().DynamicInvoke()),
+
+                FieldInfo fieldInfo => fieldInfo.GetValue(
+                    Expression.Lambda(innerExpression).Compile().DynamicInvoke()),
+
+                _ => throw new InvalidOperationException("Unable to parse inner expression!")
+            };
 
             ValidateOperator(value);
             _stringBuilder.Append(_dbService.GetSqlValue(value));
@@ -135,21 +147,22 @@ namespace TodoAPI_MVC.Database
 
         private void ValidateOperator(object? nextValue)
         {
-            if (nextValue is null)
+            if (nextValue is not null)
+                return;
+
+            switch (_logicalOperator)
             {
-                switch (_logicalOperator)
-                {
-                    case "=":
-                        _stringBuilder.Length -= 3;
-                        _stringBuilder.Append(" is ");
-                        break;
-                    case "!=":
-                        _stringBuilder.Length -= 4;
-                        _stringBuilder.Append(" is not ");
-                        break;
-                    default:
-                        break;
-                }
+                case "=":
+                    _stringBuilder.Length -= 3;
+                    _stringBuilder.Append(" is ");
+                    break;
+                case "!=":
+                    _stringBuilder.Length -= 4;
+                    _stringBuilder.Append(" is not ");
+                    break;
+                default:
+                    throw new InvalidOperationException(
+                        $"Unknown operator: '{_logicalOperator}'!");
             }
         }
     }

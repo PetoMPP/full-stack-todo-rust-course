@@ -7,6 +7,9 @@ namespace TodoAPI_MVC.Atributtes
     {
         public AuthorizeAccessAttribute(EndpointAccess access)
         {
+            if (!Enum.IsDefined(access))
+                throw new ArgumentException($"{access} is not defined!");
+
             Policy = $"{access}";
         }
     }
