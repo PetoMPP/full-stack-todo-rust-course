@@ -2,6 +2,7 @@
 {
     public abstract class DbValueConverter
     {
-        public abstract string Convert(object? value);
+        public abstract Func<object?, string> Convert { get; }
+        public abstract Func<Type, bool> CanConvert { get; }
     }
 }

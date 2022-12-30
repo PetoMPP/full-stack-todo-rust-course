@@ -6,7 +6,6 @@ using TodoAPI_MVC.Services;
 
 namespace TodoAPI_MVC.Database.Service
 {
-
     public class DbService : IDbService
     {
         public record struct GetSqlNameResult(bool Ok, string? AttributeName = null);
@@ -24,6 +23,9 @@ namespace TodoAPI_MVC.Database.Service
             if (valueType?.GetCustomAttribute<DbValueConverterAttribute>() is DbValueConverterAttribute convAttr)
             {
                 var converter = (DbValueConverter)Activator.CreateInstance(convAttr.ConverterType)!;
+                if (!converter.CanConvert(valueType))
+                    throw new InvalidOperationException($"Converter {converter} is unable to convert from type {valueType}");
+
                 return converter.Convert(value);
             }
 

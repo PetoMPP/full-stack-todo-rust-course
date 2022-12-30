@@ -2,9 +2,7 @@
 {
     public class DbStringEnumConverter : DbValueConverter
     {
-        public override string Convert(object? value)
-        {
-            return $"'{value}'";
-        }
+        public override Func<Type, bool> CanConvert => t => t.IsEnum;
+        public override Func<object?, string> Convert => v => $"{v}";
     }
 }
