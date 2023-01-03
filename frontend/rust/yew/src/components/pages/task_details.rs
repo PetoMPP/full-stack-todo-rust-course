@@ -9,7 +9,7 @@ use yewdux::prelude::use_store;
 
 use crate::{
     api::tasks::{
-        task::{Priority, Task},
+        todo_task::{Priority, TodoTask},
         tasks_service::TasksService,
     },
     components::{
@@ -46,7 +46,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
 
-    let task_data = use_mut_ref(|| Task::default());
+    let task_data = use_mut_ref(|| TodoTask::default());
 
     let onchange = {
         let task_data = task_data.clone();
@@ -67,7 +67,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                         Some(value.clone())
                     },
                 "completed" => task_data.borrow_mut().completed_at = 
-                    if task_data.borrow_mut().completed() {
+                    if task_data.borrow().completed() {
                         None
                     }
                     else {
@@ -142,7 +142,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
             let task_dispatch = task_dispatch.clone();
             let session_dispatch = session_dispatch.clone();
             let token = token.clone();
-            let task: Task = task_data.deref().clone().into();
+            let task: TodoTask = task_data.deref().clone().into();
             spawn_local(async move {
                 let response = TasksService::update_task(token.clone(), task.clone()).await;
                 match response {
@@ -243,7 +243,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     }
 }
 
-fn get_task_by_id(id: i32, store: Rc<TaskStore>) -> Option<Task> {
+fn get_task_by_id(id: i32, store: Rc<TaskStore>) -> Option<TodoTask> {
     let tasks = store.tasks.clone();
     if let None = tasks {
         return None;

@@ -1,5 +1,5 @@
 use crate::{
-    api::tasks::{task::Task, tasks_service::TasksService},
+    api::tasks::{todo_task::TodoTask, tasks_service::TasksService},
     components::{
         atoms::{
             button::Button,
@@ -42,7 +42,7 @@ pub fn new_task() -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (_, task_dispatch) = use_store::<TaskStore>();
 
-    let task_data = use_mut_ref(|| Task::default());
+    let task_data = use_mut_ref(|| TodoTask::default());
 
     let task_dispatch = task_dispatch.clone();
     let onchange = {
@@ -93,7 +93,7 @@ pub fn new_task() -> Html {
             let task_dispatch = task_dispatch.clone();
             let session_dispatch = session_dispatch.clone();
             let token = token.clone();
-            let task: Task = task_data.deref().clone().into();
+            let task: TodoTask = task_data.deref().clone().into();
             let error_data = error_data.clone();
 
             if let None = token {

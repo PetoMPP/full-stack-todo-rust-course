@@ -28,7 +28,7 @@ impl Display for Priority {
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Clone, Default)]
-pub struct Task {
+pub struct TodoTask {
     pub id: i32,
     pub title: String,
     pub priority: Option<Priority>,
@@ -36,14 +36,14 @@ pub struct Task {
     pub completed_at: Option<String>,
 }
 
-impl Task {
+impl TodoTask {
     pub fn completed(&self) -> bool {
         self.completed_at.is_some()
     }
 }
 
-impl From<RefCell<Task>> for Task {
-    fn from(ref_cell: RefCell<Task>) -> Self {
+impl From<RefCell<TodoTask>> for TodoTask {
+    fn from(ref_cell: RefCell<TodoTask>) -> Self {
         let ref_cell = ref_cell.borrow();
         Self {
             id: ref_cell.id,

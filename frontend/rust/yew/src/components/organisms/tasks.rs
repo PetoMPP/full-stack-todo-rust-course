@@ -8,15 +8,15 @@ use yew_router::prelude::{use_history, History};
 use yewdux::prelude::*;
 
 use crate::{
-    api::tasks::{task::{Task, Priority}, tasks_service::TasksService},
+    api::tasks::{todo_task::{TodoTask, Priority}, tasks_service::TasksService},
     components::{atoms::{
         button::Button,
-        checkbox::Checkbox,
         dropdown::{Dropdown, DropdownOption},
-        route_link::RouteLink,
-    }, pages::error_data::ErrorData},
+    },
+    molecules::task::Task,
+    pages::error_data::ErrorData},
     router::Route,
-    styles::{color::Color, styles::Styles},
+    styles::styles::Styles,
     SessionStore, TaskStore, utils::handle_api_error,
 };
 
@@ -59,7 +59,7 @@ pub fn tasks(props: &TasksProperties) -> Html {
         update_tasks_in_store(token, task_store, task_dispatch, session_dispatch, props.error_data.clone());
     }
 
-    let mut tasks: Vec<Task> = Vec::new();
+    let mut tasks: Vec<TodoTask> = Vec::new();
 
     if let Some(new_tasks) = task_store.deref().clone().tasks {
         tasks = new_tasks;
@@ -72,7 +72,7 @@ pub fn tasks(props: &TasksProperties) -> Html {
     tasks = sort_tasks(tasks, *sort_state);
 
     let token = token.clone();
-    let output = tasks.iter().map(|task| {
+    let output = tasks.iter().map(|task|{
         let token = token.clone();
         let task = task.clone();
         let task_dispatch = task_dispatch.clone();
@@ -82,26 +82,9 @@ pub fn tasks(props: &TasksProperties) -> Html {
         let toggle_completed = toggle_completed_callback(
             task.clone(), task_dispatch.clone(), session_dispatch.clone(), token.clone().unwrap(), props.error_data.clone());
 
+        let todo_task = task.clone();
         html! {
-            <tr>
-                <td data-test={"priority"}>
-                    {
-                        match &task.priority {
-                        Some(p) => p.to_string(),
-                        None => "-".to_string()
-                        }
-                    }
-                </td>
-                <td>
-                    <Checkbox data_test={"completed"} checked={task.completed()} onclick={toggle_completed}/>
-                </td>
-                <td>
-                    <RouteLink data_test={"tasklink"} link={Route::TaskDetails { id: task.id }} text={task.title.clone()} fore_color={Color::CustomStr("black".to_string())} />
-                </td>
-                <td>
-                    <RouteLink data_test={"delete"} link={Route::Home} onclick={remove_onclick} text={"❌"} fore_color={Color::Error} />
-                </td>
-            </tr>
+            <Task {todo_task} {remove_onclick} {toggle_completed}/>
         }
     });
     let filter_state = filter_state.clone();
@@ -168,18 +151,18 @@ pub fn tasks(props: &TasksProperties) -> Html {
     }
 }
 
-fn sort_tasks(mut tasks: Vec<Task>, sort: SortMode) -> Vec<Task> {
+fn sort_tasks(mut tasks: Vec<TodoTask>, sort: SortMode) -> Vec<TodoTask> {
     let sort = get_sort(sort);
     tasks.sort_by(sort);
     tasks
 }
 
-fn get_sort(sort: SortMode) -> impl FnMut(&Task, &Task) -> Ordering {
+fn get_sort(sort: SortMode) -> impl FnMut(&TodoTask, &TodoTask) -> Ordering {
     match sort {
-        SortMode::Title => |task_a: &Task, task_b: &Task| {
+        SortMode::Title => |task_a: &TodoTask, task_b: &TodoTask| {
             task_a.title.to_lowercase().cmp(&task_b.title.to_lowercase())
         },
-        SortMode::Priority => |task_a: &Task, task_b: &Task| {
+        SortMode::Priority => |task_a: &TodoTask, task_b: &TodoTask| {
             let a_is_none = task_a.priority.is_none();
             let b_is_none = task_b.priority.is_none();
             
@@ -197,7 +180,7 @@ fn get_sort(sort: SortMode) -> impl FnMut(&Task, &Task) -> Ordering {
             
             task_a.priority.partial_cmp(&task_b.priority).unwrap()
         },
-        SortMode::Created => |task_a: &Task, task_b: &Task| {
+        SortMode::Created => |task_a: &TodoTask, task_b: &TodoTask| {
             task_a.id.cmp(&task_b.id)
         },
     }
@@ -227,23 +210,23 @@ fn get_sort_options() -> Vec<DropdownOption> {
     ]
 }
 
-fn filter_tasks(tasks: Vec<Task>, filter: FilterMode) -> Vec<Task> {
+fn filter_tasks(tasks: Vec<TodoTask>, filter: FilterMode) -> Vec<TodoTask> {
     let mut filter = get_filter(filter);
     tasks.iter().filter_map(|task| filter(task)).collect()
 }
 
-fn get_filter(filter: FilterMode) -> impl FnMut(&Task) -> Option<Task> {
+fn get_filter(filter: FilterMode) -> impl FnMut(&TodoTask) -> Option<TodoTask> {
     match filter {
-        FilterMode::None => move |task: &Task| Some(task.clone()),
-        FilterMode::CompletedTasks => move |task: &Task| match task.completed_at {
+        FilterMode::None => move |task: &TodoTask| Some(task.clone()),
+        FilterMode::CompletedTasks => move |task: &TodoTask| match task.completed_at {
             Some(_) => Some(task.clone()),
             None => None,
         },
-        FilterMode::IncompletedTasks => move |task: &Task| match task.completed_at {
+        FilterMode::IncompletedTasks => move |task: &TodoTask| match task.completed_at {
             Some(_) => None,
             None => Some(task.clone()),
         },
-        FilterMode::PriorityA => move |task: &Task| match task.priority.clone() {
+        FilterMode::PriorityA => move |task: &TodoTask| match task.priority.clone() {
             Some(priority) => if priority == Priority::A {
                     Some(task.clone())
                 }
@@ -252,7 +235,7 @@ fn get_filter(filter: FilterMode) -> impl FnMut(&Task) -> Option<Task> {
                 },
             None => None
         },
-        FilterMode::PriorityB => move |task: &Task| match task.priority.clone() {
+        FilterMode::PriorityB => move |task: &TodoTask| match task.priority.clone() {
             Some(priority) => if priority == Priority::B {
                     Some(task.clone())
                 }
@@ -261,7 +244,7 @@ fn get_filter(filter: FilterMode) -> impl FnMut(&Task) -> Option<Task> {
                 },
             None => None
         },
-        FilterMode::PriorityC => move |task: &Task| match task.priority.clone() {
+        FilterMode::PriorityC => move |task: &TodoTask| match task.priority.clone() {
             Some(priority) => if priority == Priority::C {
                     Some(task.clone())
                 }
@@ -310,7 +293,7 @@ fn get_filter_options() -> Vec<DropdownOption> {
 }
 
 fn toggle_completed_callback(
-    task: Task,
+    task: TodoTask,
     tasks_dispatch: Dispatch<TaskStore>,
     session_dispatch: Dispatch<SessionStore>,
     token: String,
@@ -377,7 +360,7 @@ pub fn update_tasks_in_store(
 }
 
 pub fn delete_task_callback<F>(
-    task: Task,
+    task: TodoTask,
     tasks_dispatch: Dispatch<TaskStore>,
     session_dispatch: Dispatch<SessionStore>,
     token: String,
