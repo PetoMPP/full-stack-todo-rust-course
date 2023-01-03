@@ -17,7 +17,7 @@ use crate::{
     styles::{color::Color, styles::Styles},
     SessionStore, TaskStore, utils::handle_api_error,
 };
-use chrono::Local;
+use chrono::Utc;
 use lazy_static::__Deref;
 use stylist::yew::styled_component;
 use wasm_bindgen_futures::spawn_local;
@@ -69,7 +69,7 @@ pub fn new_task() -> Html {
                     task_data.borrow_mut().completed_at = if task_data.borrow_mut().completed() {
                         None
                     } else {
-                        Some(Local::now().to_string())
+                        Some(Utc::now().to_string())
                     }
                 }
                 _ => (),

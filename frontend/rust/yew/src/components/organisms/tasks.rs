@@ -1,4 +1,3 @@
-use chrono::Local;
 use lazy_static::__Deref;
 use std::{rc::Rc, cmp::Ordering};
 use wasm_bindgen_futures::spawn_local;
@@ -46,11 +45,19 @@ pub struct TasksProperties {
 pub fn tasks(props: &TasksProperties) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
+    let history = use_history().unwrap();
 
     let token = match session_store.user.clone() {
         Some(user) => Some(user.token),
         None => None,
     };
+
+    let new_task = Callback::from({
+        let history = history.clone();
+        move |_| {
+            history.push(Route::NewTask);
+            }
+    });
 
     if let Some(token) = token.clone() {
         let task_store = task_store.clone();
@@ -74,13 +81,12 @@ pub fn tasks(props: &TasksProperties) -> Html {
     let token = token.clone();
     let output = tasks.iter().map(|task|{
         let token = token.clone();
-        let task = task.clone();
         let task_dispatch = task_dispatch.clone();
         let remove_onclick = delete_task_callback(
             task.clone(), task_dispatch.clone(), session_dispatch.clone(), token.clone().unwrap(), || {}, props.error_data.clone());
 
         let toggle_completed = toggle_completed_callback(
-            task.clone(), task_dispatch.clone(), session_dispatch.clone(), token.clone().unwrap(), props.error_data.clone());
+            task.id, task_dispatch.clone(), session_dispatch.clone(), token.clone().unwrap(), props.error_data.clone());
 
         let todo_task = task.clone();
         html! {
@@ -115,12 +121,6 @@ pub fn tasks(props: &TasksProperties) -> Html {
             _ => SortMode::Created
         };
         sort_state.set(sort);
-    });
-
-    let history = use_history().unwrap();
-    let new_task = Callback::from(move |_| {
-        let history = history.clone();
-        history.push(Route::NewTask);
     });
 
     let (style, dropdown_style) = Styles::get_table_style();
@@ -293,18 +293,12 @@ fn get_filter_options() -> Vec<DropdownOption> {
 }
 
 fn toggle_completed_callback(
-    task: TodoTask,
+    task_id: i32,
     tasks_dispatch: Dispatch<TaskStore>,
     session_dispatch: Dispatch<SessionStore>,
     token: String,
     error_data: Option<UseStateHandle<ErrorData>>
 ) -> Callback<MouseEvent> {
-    let mut task = task.clone();
-    if let None = task.completed_at {
-        task.completed_at = Some(Local::now().to_string());
-    } else {
-        task.completed_at = None;
-    }
     let tasks_dispatch = tasks_dispatch.clone();
     let session_dispatch = session_dispatch.clone();
     let token = token.clone();
@@ -312,12 +306,11 @@ fn toggle_completed_callback(
     Callback::from(move |event: MouseEvent| {
         event.prevent_default(); // lets the form to update checked status
         let token = token.clone();
-        let task = task.clone();
         let tasks_dispatch = tasks_dispatch.clone();
         let session_dispatch = session_dispatch.clone();
         let error_data = error_data.clone();
         spawn_local(async move {
-            let response = TasksService::update_task(token.clone(), task.clone()).await;
+            let response = TasksService::task_toggle_completed(token.clone(), task_id).await;
             match response {
                 Ok(()) => tasks_dispatch.reduce(|store| {
                     let mut store = store.deref().clone();
@@ -344,7 +337,7 @@ pub fn update_tasks_in_store(
     if !task_store.clone().tasks_valid {
         let task_dispatch = task_dispatch.clone();
         let session_dispatch = session_dispatch.clone();
-        spawn_local(async move {
+        return spawn_local(async move {
             let response = TasksService::get_tasks(token).await;
             match response {
                 Ok(tasks) => task_dispatch.reduce(|store| {
@@ -352,7 +345,8 @@ pub fn update_tasks_in_store(
                     store.tasks = Some(tasks);
                     store.tasks_valid = true;
                     store
-                }),
+                    }
+                ),
                 Err(error) => handle_api_error(error, session_dispatch, error_data)
             }
         });

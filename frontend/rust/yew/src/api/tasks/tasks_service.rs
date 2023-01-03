@@ -39,6 +39,22 @@ impl TasksService {
         };
     }
 
+    pub async fn task_toggle_completed(token: String, id: i32) -> Result<(), ApiError> {
+        let body: Option<&str> = None;
+        let response = ApiClient::send_json::<TaskResponse, ApiErrorResponse>(
+            format!("{}/{}/toggle-completed", TASKS_URI, &id).as_str(),
+            Method::PATCH,
+            body,
+            Some(TasksService::get_headers(token)),
+        )
+        .await;
+
+        return match response {
+            Ok(_) => Ok(()),
+            Err(error) => Err(error),
+        };
+    }
+
     pub async fn delete_task(token: String, id: i32) -> Result<(), ApiError> {
         let body: Option<&str> = None;
         let response = ApiClient::send_text(

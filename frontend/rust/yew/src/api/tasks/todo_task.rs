@@ -33,7 +33,9 @@ pub struct TodoTask {
     pub title: String,
     pub priority: Option<Priority>,
     pub description: Option<String>,
+    pub created_at: String,
     pub completed_at: Option<String>,
+    pub user_id: i32
 }
 
 impl TodoTask {
@@ -50,7 +52,9 @@ impl From<RefCell<TodoTask>> for TodoTask {
             title: ref_cell.title.clone(),
             priority: ref_cell.priority.clone(),
             description: ref_cell.description.clone(),
+            created_at: ref_cell.created_at.clone(),
             completed_at: ref_cell.completed_at.clone(),
+            user_id: ref_cell.user_id.clone()
         }
     }
 }

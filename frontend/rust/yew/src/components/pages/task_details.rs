@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use chrono::Local;
+use chrono::Utc;
 use lazy_static::__Deref;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -71,12 +71,14 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                         None
                     }
                     else {
-                        Some(Local::now().to_string())
+                        Some(Utc::now().to_string())
                     },
                 _ => (),
             };
         })
     };
+
+    let history = use_history().unwrap();
 
     {
         let task_store = task_store.clone();
@@ -118,8 +120,6 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
             edit_state.set(!*edit_state);
         })
     };
-
-    let history = use_history().unwrap();
 
     let save_changes = {
         let error_data = error_data.clone();
@@ -225,7 +225,13 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                     }
                 }/>
                 <TextDisplay data_test={"description"} label={"Description"} text={task.description.clone().unwrap_or_default()}/>
-                <TextDisplay data_test={"completed"} label={"Completed at"} text={task.completed_at.clone().unwrap_or("Task not yet completed".to_string())}/>
+                <TextDisplay
+                    data_test={"completed"}
+                    label={"Completed at"}
+                    text={match task.completed_at.clone() {
+                        Some(date) => date.to_string(),
+                        None => "Task not yet completed".to_string()
+                    }}/>
                 <div class={button_style}>
                     <Button data_test={"edit"} label={"Edit task"} onclick={toggle_edit.clone()}/>
                     <Button
