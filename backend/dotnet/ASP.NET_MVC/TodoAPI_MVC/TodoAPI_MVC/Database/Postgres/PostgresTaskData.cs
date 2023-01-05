@@ -140,7 +140,7 @@ namespace TodoAPI_MVC.Database.Postgres
                             WHEN completed_at is NULL THEN CURRENT_TIMESTAMP
                             ELSE NULL
                         END
-                    WHERE {_const((TodoTask t) => t.Id == id && t.UserId == userId)}
+                    WHERE {_const((TodoTask t) => t.Id == id && t.UserId == userId).ToSqlString()}
                     RETURNING *
                     """;
 
