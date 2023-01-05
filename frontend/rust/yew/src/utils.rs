@@ -11,15 +11,16 @@ pub fn handle_api_error(
     session_dispatch: Dispatch<SessionStore>,
     error_data: Option<UseStateHandle<ErrorData>>)
 {
-    if let ApiError::HttpStatus(code, _) = error {
-        if code == 401u16 {
-            session_dispatch.reduce(|store| {
-                let mut store = store.deref().clone();
-                store.user = None;
-                store
-            })
-        }
-    }
+    log!(error.to_string());
+    // if let ApiError::HttpStatus(code, _) = error {
+    //     if code == 401u16 || code == 403u16 {
+    session_dispatch.reduce(|store| {
+        let mut store = store.deref().clone();
+        store.user = None;
+        store
+    });
+    //     }
+    // }
     
     match error_data {
         Some(error_data) => {
