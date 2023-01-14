@@ -24,7 +24,7 @@ namespace TodoAPI_MVC.Database.Postgres
         }
 
         public async Task<IDatabaseResult<TodoTask>> CreateAsync(
-            TodoTask task, int? userId, CancellationToken cancellationToken = default)
+            TodoTask task, int? userId, bool asCompleted, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -33,6 +33,7 @@ namespace TodoAPI_MVC.Database.Postgres
                     return DatabaseResults.Error<TodoTask>(error);
 
                 task.UserId = userId ?? throw new ArgumentNullException(nameof(userId));
+                task.CompletedAt = asCompleted ? DateTime.Now : null;
                 var createdTask = (await _dataSource.InsertRowsReturning(
                     TableName, new[] { task }, cancellationToken)).FirstOrDefault();
 
@@ -44,12 +45,13 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask[]>> CreateDefaultsAsync(int? userId, CancellationToken cancellationToken = default)
+        public async Task<IDatabaseResult<TodoTask[]>> CreateDefaultsAsync(
+            int? userId, CancellationToken cancellationToken = default)
         {
             var tasks = new List<TodoTask>();
             foreach (var task in _defaults.DefaultTasks)
             {
-                var result = await CreateAsync(task, userId, cancellationToken);
+                var result = await CreateAsync(task, userId, false, cancellationToken);
                 if (result.Code != StatusCode.Ok)
                     return DatabaseResults.Error<TodoTask[]>(result.ErrorData);
 
@@ -76,7 +78,8 @@ namespace TodoAPI_MVC.Database.Postgres
             }
         }
 
-        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(CancellationToken cancellationToken = default)
+        public async Task<IDatabaseResult<TodoTask[]>> GetAllAsync(
+            CancellationToken cancellationToken = default)
         {
             try
             {

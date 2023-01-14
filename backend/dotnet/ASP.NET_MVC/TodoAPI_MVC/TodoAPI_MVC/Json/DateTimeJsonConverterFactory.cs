@@ -29,7 +29,13 @@ namespace TodoAPI_MVC.Json
             public override DateTime? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
             {
                 if (reader.TokenType == JsonTokenType.String)
-                    return DateTime.Parse(reader.GetString()!);
+                {
+                    var date = reader.GetString();
+                    if (string.IsNullOrEmpty(date))
+                        return null;
+
+                    return DateTime.Parse(date!);
+                }
 
                 if (reader.TokenType == JsonTokenType.Null)
                     return null;

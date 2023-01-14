@@ -139,5 +139,11 @@ namespace TodoAPI_MVC.Database.Memory
         {
             throw new NotImplementedException();
         }
+
+        public Task<IDatabaseResult<TodoTask>> CreateAsync(
+            TodoTask task, int? userId, bool asCompleted, CancellationToken cancellationToken = default)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

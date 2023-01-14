@@ -25,10 +25,10 @@ namespace TodoAPI_MVC.Controllers
 
         [HttpPost]
         public async Task<IActionResult> Create(
-            TodoTask newTask, CancellationToken cancellationToken)
+            TodoTask newTask, [FromQuery]bool asCompleted, CancellationToken cancellationToken)
         {
             return ActionResult(
-                await _taskData.CreateAsync(newTask, await GetCurrentUserId(), cancellationToken));
+                await _taskData.CreateAsync(newTask, await GetCurrentUserId(), asCompleted, cancellationToken));
         }
 
         [HttpGet("{id:int}")]
