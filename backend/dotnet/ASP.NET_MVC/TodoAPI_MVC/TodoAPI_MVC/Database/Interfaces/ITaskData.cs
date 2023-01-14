@@ -4,7 +4,7 @@ namespace TodoAPI_MVC.Database.Interfaces
 {
     public interface ITaskData
     {
-        Task<IDatabaseResult<TodoTask>> CreateAsync(TodoTask task, int? userId, CancellationToken cancellationToken = default);
+        Task<IDatabaseResult<TodoTask>> CreateAsync(TodoTask task, int? userId, bool asCompleted, CancellationToken cancellationToken = default);
         Task<IDatabaseResult> DeleteAsync(int id, int? userId, CancellationToken cancellationToken = default);
         Task<IDatabaseResult<TodoTask>> GetAsync(int id, int? userId, CancellationToken cancellationToken = default);
         Task<IDatabaseResult<TodoTask[]>> GetAllOwnedAsync(int? userId, CancellationToken cancellationToken = default);

@@ -23,7 +23,8 @@ namespace TodoAPI_MVC_Tests.Controllers
             var controller = GetController(
                 claims: new[] { new Claim("Id", $"{TodoTask.Id}") });
 
-            var actual = (ObjectResult)await controller.Create(TodoTask, CancellationToken.None);
+            var actual = (ObjectResult)await controller.Create(
+                TodoTask, false, CancellationToken.None);
 
             actual.StatusCode.Should().BeInRange(200, 299);
             actual.Value.Should().BeEquivalentTo(TodoTask);
@@ -36,7 +37,7 @@ namespace TodoAPI_MVC_Tests.Controllers
                 taskDataMock: GetTaskDataMock(StatusCode.Error));
 
             var actual = (ObjectResult)await controller.Create(
-                TodoTask, CancellationToken.None);
+                TodoTask, false, CancellationToken.None);
 
             actual.StatusCode.Should().BeInRange(400, 499);
             actual.Value.Should().BeEquivalentTo(TestHelper.Error);
@@ -186,7 +187,7 @@ namespace TodoAPI_MVC_Tests.Controllers
         {
             var mock = new Mock<ITaskData>();
             mock.Setup(m => m.CreateAsync(
-                    It.IsAny<TodoTask>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                    It.IsAny<TodoTask>(), It.IsAny<int?>(), It.IsAny<bool>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(TestHelper.GetDbResult(returnedStatus, isErrorNull, TodoTask));
 
             mock.Setup(m => m.GetAsync(

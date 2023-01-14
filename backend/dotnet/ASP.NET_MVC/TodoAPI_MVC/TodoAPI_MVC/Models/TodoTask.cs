@@ -12,7 +12,7 @@ namespace TodoAPI_MVC.Models
         string? Description,
         [property: JsonConverter(typeof(DateTimeJsonConverterFactory))]
         [property: DbDefault]
-        DateTime CreatedAt,
+        DateTime? CreatedAt,
         [property: JsonConverter(typeof(DateTimeJsonConverterFactory))]
         DateTime? CompletedAt,
         int UserId)
