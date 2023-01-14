@@ -33,7 +33,7 @@ pub struct TodoTask {
     pub title: String,
     pub priority: Option<Priority>,
     pub description: Option<String>,
-    pub created_at: String,
+    pub created_at: Option<String>,
     pub completed_at: Option<String>,
     pub user_id: i32
 }

@@ -9,9 +9,9 @@ pub struct TasksService;
 const TASKS_URI: &str = "/tasks";
 
 impl TasksService {
-    pub async fn create_task(token: String, task: TodoTask) -> Result<TodoTask, ApiError> {
+    pub async fn create_task(token: String, task: TodoTask, as_completed: bool) -> Result<TodoTask, ApiError> {
         let response = ApiClient::send_json::<TaskResponse, ApiErrorResponse>(
-            TASKS_URI,
+            format!("{}?asCompleted={}", TASKS_URI, as_completed).as_str(),
             Method::POST,
             Some(serde_json::to_string(&task).unwrap()),
             Some(TasksService::get_headers(token)),

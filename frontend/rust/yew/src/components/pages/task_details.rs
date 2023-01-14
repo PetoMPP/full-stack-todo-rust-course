@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use chrono::Utc;
+use chrono::{Utc, SecondsFormat};
 use lazy_static::__Deref;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -71,7 +71,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                         None
                     }
                     else {
-                        Some(Utc::now().to_string())
+                        Some(Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true))
                     },
                 _ => (),
             };
