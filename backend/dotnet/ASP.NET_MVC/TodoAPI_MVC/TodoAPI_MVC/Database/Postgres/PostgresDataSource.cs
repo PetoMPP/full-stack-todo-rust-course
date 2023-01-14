@@ -23,8 +23,13 @@ namespace TodoAPI_MVC.Database.Postgres
     {
         private readonly NpgsqlDataSource _npgsqlDataSource;
         private readonly IDbService _dbService;
+        private readonly Dictionary<Type, PropertiesData> _typeData = new();
 
         private record struct PropertyData(PropertyInfo PropertyInfo, string SqlName);
+        private record struct PropertiesData(PropertyData[] WriteableProperties, PropertyData[] ReadableProperties)
+        {
+            public bool Any() => WriteableProperties.Any() || ReadableProperties.Any();
+        }
 
         public PostgresDataSource(NpgsqlDataSource npgsqlDataSource, IDbService dbService)
         {
@@ -40,15 +45,9 @@ namespace TodoAPI_MVC.Database.Postgres
 
         public async Task<IList<T>> ExecuteQuery<T>(string commandString, CancellationToken cancellationToken)
         {
-            var properties = typeof(T).GetProperties().Where(p => p.CanRead && p.CanWrite);
-            var propertiesData = GetPropertiesData(properties, true);
-
-            if (!propertiesData.Any())
-                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
-
             using var command = _npgsqlDataSource.CreateCommand(commandString);
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            return await ReadValues<T>(reader, propertiesData, cancellationToken);
+            return await ReadValues<T>(reader, cancellationToken);
         }
 
         public async Task<int> DeleteRows(
@@ -56,8 +55,8 @@ namespace TodoAPI_MVC.Database.Postgres
             string? sqlFilter = null,
             CancellationToken cancellationToken = default)
         {
-            var commandString = CreateDeleteCommandString(tableName, sqlFilter);
-            using var command = _npgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(
+                CreateDeleteCommandString(tableName, sqlFilter));
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -67,16 +66,8 @@ namespace TodoAPI_MVC.Database.Postgres
             string? sqlFilter = null,
             CancellationToken cancellationToken = default)
         {
-            var properties = typeof(T).GetProperties().Where(p => p.CanRead);
-            var propertiesData = GetPropertiesData(properties, true);
-
-            if (!propertiesData.Any())
-                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
-
-            var columnNames = propertiesData.Select(p => p.SqlName);
-            var commandString = CreateUpdateCommandString(tableName, propertiesData, value, sqlFilter, false);
-
-            using var command = _npgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(
+                CreateUpdateCommandString(tableName, value, sqlFilter, false));
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -86,18 +77,10 @@ namespace TodoAPI_MVC.Database.Postgres
             string? sqlFilter = null,
             CancellationToken cancellationToken = default)
         {
-            var properties = typeof(T).GetProperties().Where(p => p.CanRead && p.CanWrite);
-            var propertiesData = GetPropertiesData(properties, true);
-
-            if (!propertiesData.Any())
-                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
-
-            var columnNames = propertiesData.Select(p => p.SqlName);
-            var commandString = CreateUpdateCommandString(tableName, propertiesData, value, sqlFilter, true);
-
-            using var command = _npgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(
+                CreateUpdateCommandString(tableName, value, sqlFilter, true));
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            return await ReadValues<T>(reader, propertiesData, cancellationToken);
+            return await ReadValues<T>(reader, cancellationToken);
         }
 
         public async Task<IList<T>> InsertRowsReturning<T>(
@@ -105,18 +88,10 @@ namespace TodoAPI_MVC.Database.Postgres
             IEnumerable<T> values,
             CancellationToken cancellationToken = default)
         {
-            var properties = typeof(T).GetProperties().Where(p => p.CanRead && p.CanWrite);
-            var propertiesData = GetPropertiesData(properties, true);
-
-            if (!propertiesData.Any())
-                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
-
-            var columnNames = propertiesData.Select(p => p.SqlName);
-            var commandString = CreateInsertCommandString(tableName, propertiesData, values, true);
-
-            using var command = _npgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(
+                CreateInsertCommandString(tableName, values, true));
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            return await ReadValues<T>(reader, propertiesData, cancellationToken);
+            return await ReadValues<T>(reader, cancellationToken);
         }
 
         public async Task<int> InsertRows<T>(
@@ -124,16 +99,8 @@ namespace TodoAPI_MVC.Database.Postgres
             IEnumerable<T> values,
             CancellationToken cancellationToken = default)
         {
-            var properties = typeof(T).GetProperties().Where(p => p.CanRead);
-            var propertiesData = GetPropertiesData(properties, true);
-
-            if (!propertiesData.Any())
-                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
-
-            var columnNames = propertiesData.Select(p => p.SqlName);
-            var commandString = CreateInsertCommandString(tableName, propertiesData, values, false);
-
-            using var command = _npgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(
+                CreateInsertCommandString(tableName, values, false));
             return await command.ExecuteNonQueryAsync(cancellationToken);
         }
 
@@ -142,27 +109,19 @@ namespace TodoAPI_MVC.Database.Postgres
             string? sqlFilter = null,
             CancellationToken cancellationToken = default)
         {
-            var properties = typeof(T).GetProperties().Where(p => p.CanWrite);
-            var propertiesData = GetPropertiesData(properties, false);
-
-            if (!propertiesData.Any())
-                throw new ArgumentException("Type doesn't have any writeable properties!", nameof(T));
-
-            var columnNames = propertiesData.Select(p => p.SqlName);
-            var commandString = CreateSelectCommandString(tableName, sqlFilter, columnNames);
-
-            using var command = _npgsqlDataSource.CreateCommand(commandString);
+            using var command = _npgsqlDataSource.CreateCommand(
+                CreateSelectCommandString<T>(tableName, sqlFilter));
             using var reader = await command.ExecuteReaderAsync(cancellationToken);
-            return await ReadValues<T>(reader, propertiesData, cancellationToken);
+            return await ReadValues<T>(reader, cancellationToken);
         }
 
-        private static async Task<IList<T>> ReadValues<T>(
+        private async Task<IList<T>> ReadValues<T>(
             NpgsqlDataReader reader,
-            IEnumerable<PropertyData> propertiesData,
             CancellationToken cancellationToken)
         {
+            var propertiesData = GetPropertiesData<T>();
             var columnSchema = await reader.GetColumnSchemaAsync(cancellationToken);
-            var propertyDataMap = MapPropertiesToColumnsSchema(propertiesData, columnSchema);
+            var propertyDataMap = MapPropertiesToColumnsSchema(propertiesData.ReadableProperties, columnSchema);
 
             var result = new List<T>();
 
@@ -200,68 +159,144 @@ namespace TodoAPI_MVC.Database.Postgres
 
         private static string CreateDeleteCommandString(string tableName, string? sqlFilter)
         {
-            var command = $"DELETE FROM {tableName}";
-            if (sqlFilter is not null)
-                command = $"{command} WHERE {sqlFilter}";
+            var builder = new StringBuilder();
+            builder
+                .Append("DELETE FROM ")
+                .Append(tableName);
 
-            return command;
+            if (!string.IsNullOrEmpty(sqlFilter))
+            {
+                builder
+                    .Append(" WHERE ")
+                    .Append(sqlFilter);
+            }
+
+            return builder.ToString();
         }
 
         private string CreateUpdateCommandString<T>(
-            string tableName, IEnumerable<PropertyData> propertiesData, T value, string? sqlFilter, bool returning)
+            string tableName, T value, string? sqlFilter, bool returning)
         {
-            var builder = new StringBuilder();
-            var setterString = string.Join(
-                ", ", propertiesData.Select(p =>
-                    $"{p.SqlName} = {_dbService.GetSqlValue(p.PropertyInfo.GetValue(value))}"));
+            var propertiesData = GetPropertiesData<T>();
+            if (!propertiesData.Any())
+                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
 
-            builder.Append("UPDATE ").Append(tableName).Append(" SET ").Append(setterString);
+            var builder = new StringBuilder();
+
+            builder
+                .Append("UPDATE ")
+                .Append(tableName)
+                .Append(" SET ")
+                .AppendJoin(
+                    ", ",
+                    propertiesData.WriteableProperties
+                        .Select(p => $"{p.SqlName} = {_dbService.GetSqlValue(p.PropertyInfo.GetValue(value))}"));
 
             if (sqlFilter is not null)
-                builder.Append(" WHERE ").Append(sqlFilter);
+            {
+                builder
+                    .Append(" WHERE ")
+                    .Append(sqlFilter);
+            }
 
             if (returning)
-                builder.Append(" RETURNING ").AppendJoin(", ", propertiesData.Select(p => p.SqlName));
+            {
+                builder
+                    .Append(" RETURNING ")
+                    .AppendJoin(", ", propertiesData.ReadableProperties.Select(p => p.SqlName));
+            }
 
             return builder.ToString();
         }
 
         private string CreateInsertCommandString<T>(
-            string tableName, IEnumerable<PropertyData> propertiesData, IEnumerable<T> values, bool returning)
+            string tableName, IEnumerable<T> values, bool returning)
         {
-            var columnNames = propertiesData.Select(p => p.SqlName);
+            var propertiesData = GetPropertiesData<T>();
+            if (!propertiesData.Any())
+                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
+
             var builder = new StringBuilder();
-            builder.Append("INSERT INTO ").Append(tableName).Append(" (").AppendJoin(", ", columnNames).Append(") ");
-            builder.Append("VALUES ");
+            builder
+                .Append("INSERT INTO ")
+                .Append(tableName)
+                .Append(" (")
+                .AppendJoin(", ", propertiesData.WriteableProperties.Select(p => p.SqlName))
+                .Append(") ")
+                .Append("VALUES ");
 
             foreach (var value in values)
-                builder.Append('(').AppendJoin(", ", propertiesData.Select(p => _dbService.GetSqlValue(p.PropertyInfo.GetValue(value)))).Append("),");
+            {
+                builder
+                    .Append('(')
+                    .AppendJoin(", ", propertiesData.WriteableProperties
+                        .Select(p => _dbService.GetSqlValue(p.PropertyInfo.GetValue(value))))
+                    .Append("),");
+            }
 
             builder.Length--;
 
             if (returning)
-                builder.Append(" RETURNING ").AppendJoin(", ", columnNames);
+            {
+                builder
+                    .Append(" RETURNING ")
+                    .AppendJoin(", ", propertiesData.ReadableProperties.Select(p => p.SqlName));
+            }
 
             return builder.ToString();
         }
 
-        private IEnumerable<PropertyData> GetPropertiesData(
-            IEnumerable<PropertyInfo> properties, bool skipDefaultProperties)
+        private string CreateSelectCommandString<T>(
+            string tableName, string? sqlFilter)
         {
-            foreach (var property in properties)
-            {
-                if (!_dbService.TryGetSqlName(property, skipDefaultProperties, out var sqlName, out _))
-                    continue;
+            var propertiesData = GetPropertiesData<T>();
+            if (!propertiesData.Any())
+                throw new ArgumentException("Type doesn't have any readable properties!", nameof(T));
 
-                yield return new PropertyData(property, sqlName);
+            var builder = new StringBuilder();
+            builder
+                .Append("SELECT ")
+                .AppendJoin(", ", propertiesData.ReadableProperties.Select(p => p.SqlName))
+                .Append(" FROM ")
+                .Append(tableName);
+
+            if (!string.IsNullOrEmpty(sqlFilter))
+            {
+                builder
+                    .Append(" WHERE ")
+                    .Append(sqlFilter);
             }
+
+            return builder.ToString();
         }
 
-        private static string CreateSelectCommandString(
-            string tableName, string? sqlFilter, IEnumerable<string> columnNames)
+        private PropertiesData GetPropertiesData<T>()
         {
-            sqlFilter = sqlFilter is null ? string.Empty : $" WHERE {sqlFilter}";
-            return $"SELECT {string.Join(", ", columnNames)} FROM {tableName}{sqlFilter}";
+            if (_typeData.TryGetValue(typeof(T), out var typeProperties))
+                return typeProperties;
+
+            var readable = new List<PropertyData>();
+            var writeable = new List<PropertyData>();
+            foreach (var property in typeof(T).GetProperties().Where(p => p.CanRead))
+            {
+                if (!_dbService.TryGetSqlName(property, false, out var sqlName, out _))
+                    continue;
+
+                readable.Add(new PropertyData(property, sqlName));
+            }
+
+            foreach (var property in typeof(T).GetProperties().Where(p => p.CanWrite))
+            {
+                if (!_dbService.TryGetSqlName(property, true, out var sqlName, out _))
+                    continue;
+
+                writeable.Add(new PropertyData(property, sqlName));
+            }
+
+            var result = new PropertiesData(writeable.ToArray(), readable.ToArray());
+            _typeData.Add(typeof(T), result);
+
+            return result;
         }
 
         private static Dictionary<int, PropertyData> MapPropertiesToColumnsSchema(
