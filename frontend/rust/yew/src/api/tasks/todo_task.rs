@@ -1,3 +1,4 @@
+use chrono::{Utc, DateTime, TimeZone};
 use serde::{Deserialize, Serialize};
 use std::{cell::RefCell, fmt::Display, str::FromStr};
 
@@ -38,9 +39,31 @@ pub struct TodoTask {
     pub user_id: i32
 }
 
+const DATE_FORMAT: &str = "%Y-%m-%d %H:%M:%S.%f";
+
 impl TodoTask {
     pub fn completed(&self) -> bool {
         self.completed_at.is_some()
+    }
+
+    pub fn created_at(&self) -> Option<DateTime<Utc>> {
+        if let None = self.created_at {
+            return None;
+        }
+        return match Utc.datetime_from_str(&self.created_at.clone().unwrap().trim(), DATE_FORMAT) {
+            Ok(date) => Some(date),
+            Err(_) => None
+        };
+    }
+
+    pub fn completed_at(&self) -> Option<DateTime<Utc>> {
+        if let None = self.completed_at {
+            return None;
+        }
+        return match Utc.datetime_from_str(&self.completed_at.clone().unwrap().trim(), DATE_FORMAT) {
+            Ok(date) => Some(date),
+            Err(_) => None
+        };
     }
 }
 
