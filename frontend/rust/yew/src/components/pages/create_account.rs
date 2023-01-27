@@ -67,7 +67,7 @@ pub fn create_account() -> Html {
                         });
                         history.push(Route::Home)
                     }
-                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
+                    Err(error) => handle_api_error(error, &session_dispatch, Some(error_data))
                 }
             });
         })

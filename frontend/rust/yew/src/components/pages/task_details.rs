@@ -1,5 +1,5 @@
 use std::rc::Rc;
-use chrono::Local;
+use chrono::{Utc, SecondsFormat};
 use lazy_static::__Deref;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
@@ -9,7 +9,7 @@ use yewdux::prelude::use_store;
 
 use crate::{
     api::tasks::{
-        task::{Priority, Task},
+        todo_task::{Priority, TodoTask},
         tasks_service::TasksService,
     },
     components::{
@@ -46,7 +46,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
 
-    let task_data = use_mut_ref(|| Task::default());
+    let task_data = use_mut_ref(|| TodoTask::default());
 
     let onchange = {
         let task_data = task_data.clone();
@@ -67,16 +67,18 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                         Some(value.clone())
                     },
                 "completed" => task_data.borrow_mut().completed_at = 
-                    if task_data.borrow_mut().completed() {
+                    if task_data.borrow().completed() {
                         None
                     }
                     else {
-                        Some(Local::now().to_string())
+                        Some(Utc::now().to_rfc3339_opts(SecondsFormat::Secs, true))
                     },
                 _ => (),
             };
         })
     };
+
+    let history = use_history().unwrap();
 
     {
         let task_store = task_store.clone();
@@ -119,8 +121,6 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         })
     };
 
-    let history = use_history().unwrap();
-
     let save_changes = {
         let error_data = error_data.clone();
         let history = history.clone();
@@ -142,7 +142,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
             let task_dispatch = task_dispatch.clone();
             let session_dispatch = session_dispatch.clone();
             let token = token.clone();
-            let task: Task = task_data.deref().clone().into();
+            let task: TodoTask = task_data.deref().clone().into();
             spawn_local(async move {
                 let response = TasksService::update_task(token.clone(), task.clone()).await;
                 match response {
@@ -157,7 +157,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                             store
                         })
                     }
-                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
+                    Err(error) => handle_api_error(error, &session_dispatch, Some(error_data))
                 }
             })
         })
@@ -225,7 +225,13 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                     }
                 }/>
                 <TextDisplay data_test={"description"} label={"Description"} text={task.description.clone().unwrap_or_default()}/>
-                <TextDisplay data_test={"completed"} label={"Completed at"} text={task.completed_at.clone().unwrap_or("Task not yet completed".to_string())}/>
+                <TextDisplay
+                    data_test={"completed"}
+                    label={"Completed at"}
+                    text={match task.completed_at.clone() {
+                        Some(date) => date.to_string(),
+                        None => "Task not yet completed".to_string()
+                    }}/>
                 <div class={button_style}>
                     <Button data_test={"edit"} label={"Edit task"} onclick={toggle_edit.clone()}/>
                     <Button
@@ -243,7 +249,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     }
 }
 
-fn get_task_by_id(id: i32, store: Rc<TaskStore>) -> Option<Task> {
+fn get_task_by_id(id: i32, store: Rc<TaskStore>) -> Option<TodoTask> {
     let tasks = store.tasks.clone();
     if let None = tasks {
         return None;

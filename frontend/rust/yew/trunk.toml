@@ -1,0 +1,5 @@
+[watch]
+# Paths to watch. The `build.target`'s parent folder is watched by default.
+watch = []
+# Paths to ignore.
+ignore = [".vs/"]

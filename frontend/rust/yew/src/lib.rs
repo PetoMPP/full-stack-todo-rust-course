@@ -1,4 +1,4 @@
-use api::{auth::auth::Auth, tasks::task::Task};
+use api::{auth::auth::Auth, tasks::todo_task::TodoTask};
 use serde::{Serialize, Deserialize};
 use yew::prelude::*;
 use yew_router::prelude::*;
@@ -24,7 +24,7 @@ pub struct SessionStore{
 
 #[derive(Default, PartialEq, Clone, Debug, Store)]
 pub struct TaskStore{
-    tasks: Option<Vec<Task>>,
+    tasks: Option<Vec<TodoTask>>,
     tasks_valid: bool,
 }
 
