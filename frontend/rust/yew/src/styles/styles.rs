@@ -82,8 +82,8 @@ impl Styles {
             r#"
             display: flex;
             justify-content: space-between;
-            margin: auto;
             flex-flow: wrap-reverse;
+            margin: 0.5rem;
             "#).unwrap();
 
         (style, div_style)
@@ -126,9 +126,6 @@ impl Styles {
             display: flex;
             flex-direction: column;
             width: min(80vw, 1050px);
-            div {
-                margin: 1em 0;
-            }
             "#
         )
         .unwrap()

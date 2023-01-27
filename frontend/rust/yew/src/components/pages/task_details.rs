@@ -157,7 +157,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                             store
                         })
                     }
-                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
+                    Err(error) => handle_api_error(error, &session_dispatch, Some(error_data))
                 }
             })
         })

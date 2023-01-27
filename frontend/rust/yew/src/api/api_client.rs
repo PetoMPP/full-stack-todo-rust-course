@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use gloo::console::log;
 use serde::{Deserialize, Serialize, de::DeserializeOwned};
 use reqwasm::{http::*, Error};
 use lazy_static::lazy_static;
@@ -105,11 +106,20 @@ impl ApiClient {
             let response_clone = Response::from_raw(response.as_raw().clone().unwrap());
             return match response_clone.json::<T>().await {
                 Ok(ok) => Ok(ok),
-                Err(_) => {
+                Err(err) => {
+                    log!(err.to_string());
                     let response_clone = Response::from_raw(response.as_raw().clone().unwrap());
                     match response_clone.json::<E>().await {
                         Ok(ok) => Err(ok.into()),
-                        Err(error) => Err(ApiError::Parse(error.to_string())),
+                        Err(err) => {
+                            log!(err.to_string());
+                            let response_clone = Response::from_raw(response.as_raw().clone().unwrap());
+                            let mut text = response_clone.text().await.unwrap_or_default();
+                            if text.trim().is_empty() {
+                                text.push_str("Unknown API error");
+                            }
+                            Err(ApiError::Other(text))
+                        }
                 }}
             };
     }

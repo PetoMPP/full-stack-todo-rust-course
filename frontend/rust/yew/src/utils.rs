@@ -12,24 +12,18 @@ use crate::{
 
 pub fn handle_api_error(
     error: ApiError,
-    session_dispatch: Dispatch<SessionStore>,
+    session_dispatch: &Dispatch<SessionStore>,
     error_data: Option<UseStateHandle<ErrorData>>,
 ) {
     log!(error.to_string());
-    if let ApiError::HttpStatus(code, _) = error {
-        if code == 401u16 {
-            session_dispatch.reduce(|store| {
-                let mut store = store.deref().clone();
-                store.user = None;
-                store
-            });
-        }
-    } else if let ApiError::Parse(_) = error {
-        session_dispatch.reduce(|store| {
-            let mut store = store.deref().clone();
-            store.user = None;
-            store
-        });
+    match error {
+        ApiError::HttpStatus(code, _) => {
+            if code == 401u16 {
+                clear_user_store(session_dispatch);
+            }
+        },
+        ApiError::Parse(_) => clear_user_store(session_dispatch),
+        ApiError::Other(_) => clear_user_store(session_dispatch),
     }
 
     match error_data {
@@ -54,4 +48,12 @@ pub fn handle_api_error(
         }
         None => log!(error.to_string()),
     }
+}
+
+fn clear_user_store(dispatch: &Dispatch<SessionStore>) {
+    dispatch.reduce(|store| {
+        let mut store = store.deref().clone();
+        store.user = None;
+        store
+    });
 }

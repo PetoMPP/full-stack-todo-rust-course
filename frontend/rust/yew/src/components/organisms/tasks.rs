@@ -1,5 +1,6 @@
 use lazy_static::__Deref;
 use std::{rc::Rc, cmp::Ordering};
+use stylist::style;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
@@ -124,6 +125,13 @@ pub fn tasks(props: &TasksProperties) -> Html {
     });
 
     let (style, dropdown_style) = Styles::get_table_style();
+    let tasks_style = style!(
+        r#"
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        "#)
+        .unwrap();
 
     html! {
         <>
@@ -132,20 +140,8 @@ pub fn tasks(props: &TasksProperties) -> Html {
                 <Dropdown label={"Sort"} options={get_sort_options()} data_test={"sort"} selected_option={get_sort_selected_option()} onchange={apply_sort}/>
                 <Button label={"+ add new task"} onclick={new_task} data_test={"add-task"}/>
             </div>
-            <div class={style}>
-                <table>
-                <col style="width:10%" />
-                <col style="width:10%" />
-                <col style="width:60%" />
-                <col style="width:20%" />
-                    <thead>
-                        <th>{"Priority"}</th>
-                        <th>{"Done?"}</th>
-                        <th>{"Title"}</th>
-                        <th></th>
-                    </thead>
-                    {for output}
-                </table>
+            <div class={tasks_style}>
+                {for output}
             </div>
         </>
     }
@@ -317,7 +313,7 @@ fn toggle_completed_callback(
                     store.tasks_valid = false;
                     store
                 }),
-                Err(error) => handle_api_error(error, session_dispatch, error_data)
+                Err(error) => handle_api_error(error, &session_dispatch, error_data)
             }
         })
     })
@@ -347,7 +343,7 @@ pub fn update_tasks_in_store(
                     store
                     }
                 ),
-                Err(error) => handle_api_error(error, session_dispatch, error_data)
+                Err(error) => handle_api_error(error, &session_dispatch, error_data)
             }
         });
     }
@@ -383,7 +379,7 @@ where
                     store.tasks_valid = false;
                     store
                 }),
-                Err(error) => handle_api_error(error, session_dispatch, error_data)
+                Err(error) => handle_api_error(error, &session_dispatch, error_data)
             }
         })
     })
