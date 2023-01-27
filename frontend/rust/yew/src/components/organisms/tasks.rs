@@ -4,7 +4,7 @@ use stylist::style;
 use wasm_bindgen_futures::spawn_local;
 use web_sys::HtmlInputElement;
 use yew::prelude::*;
-use yew_router::prelude::{use_history, History};
+use yew_router::prelude::*;
 use yewdux::prelude::*;
 
 use crate::{
@@ -46,7 +46,7 @@ pub struct TasksProperties {
 pub fn tasks(props: &TasksProperties) -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
 
     let token = match session_store.user.clone() {
         Some(user) => Some(user.token),
@@ -56,7 +56,7 @@ pub fn tasks(props: &TasksProperties) -> Html {
     let new_task = Callback::from({
         let history = history.clone();
         move |_| {
-            history.push(Route::NewTask);
+            history.push(&Route::NewTask);
             }
     });
 
@@ -311,7 +311,7 @@ fn toggle_completed_callback(
                 Ok(()) => tasks_dispatch.reduce(|store| {
                     let mut store = store.deref().clone();
                     store.tasks_valid = false;
-                    store
+                    store.into()
                 }),
                 Err(error) => handle_api_error(error, &session_dispatch, error_data)
             }
@@ -340,7 +340,7 @@ pub fn update_tasks_in_store(
                     let mut store = store.deref().clone();
                     store.tasks = Some(tasks);
                     store.tasks_valid = true;
-                    store
+                    store.into()
                     }
                 ),
                 Err(error) => handle_api_error(error, &session_dispatch, error_data)
@@ -377,7 +377,7 @@ where
                     action();
                     let mut store = store.deref().clone();
                     store.tasks_valid = false;
-                    store
+                    store.into()
                 }),
                 Err(error) => handle_api_error(error, &session_dispatch, error_data)
             }

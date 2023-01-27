@@ -27,12 +27,12 @@ pub fn navbar(props: &NavbarProperties) -> Html {
         let task_dispatch = task_dispatch.clone();
         Callback::from(move |_: MouseEvent| {
             task_dispatch.reduce(|_| {
-                TaskStore::default()
+                TaskStore::default().into()
             });
             session_dispatch.reduce(|session_store| {
                 let mut session_store = session_store.deref().clone();
                 session_store.user = None;
-                session_store
+                session_store.into()
             });
         })
     };

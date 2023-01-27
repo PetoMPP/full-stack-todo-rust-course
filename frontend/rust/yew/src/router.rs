@@ -19,12 +19,12 @@ pub enum Route {
     NewTask,
 }
 
-pub fn switch(route: &Route) -> Html {
+pub fn switch(route: Route) -> Html {
     match route {
         Route::Home => html! {<Home />},
         Route::CreateAccount => html! {<CreateAccount />},
         Route::Login => html! {<Login />},
-        Route::TaskDetails { id } => html! { <TaskDetails task_id={*id}/>},
+        Route::TaskDetails { id } => html! { <TaskDetails task_id={id}/>},
         Route::NewTask => html! { <NewTask /> },
     }
 }

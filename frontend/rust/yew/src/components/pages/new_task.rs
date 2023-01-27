@@ -29,11 +29,11 @@ use yewdux::prelude::*;
 pub fn new_task() -> Html {
     let (style, button_style) = Styles::get_editable_details_style();
 
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     let history = history.clone();
     let goto_home = {
         let history = history.clone();
-        Callback::from(move |_| history.push(Route::Home))
+        Callback::from(move |_| history.push(&Route::Home))
     };
 
     let error_data = use_state(|| ErrorData::default());
@@ -103,11 +103,11 @@ pub fn new_task() -> Html {
                     TasksService::create_task(token.clone().unwrap(), task.clone(), *create_task_as_completed.borrow()).await;
                 match response {
                     Ok(_) => {
-                        history.push(Route::Home);
+                        history.push(&Route::Home);
                         task_dispatch.reduce(|store| {
                             let mut store = store.deref().clone();
                             store.tasks_valid = false;
-                            store
+                            store.into()
                         })
                     }
                     Err(error) => handle_api_error(error, &session_dispatch, Some(error_data))

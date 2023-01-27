@@ -46,7 +46,7 @@ pub fn app() -> Html {
         <BrowserRouter>
             <Navbar />
             <div class={body_style}>
-                <Switch<Route> render={Switch::render(switch)}/>
+                <Switch<Route> render={switch}/>
             </div>
         </BrowserRouter>
         </>

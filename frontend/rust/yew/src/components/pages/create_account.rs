@@ -38,11 +38,11 @@ pub fn create_account() -> Html {
 
     let (_, session_dispatch) = use_store::<SessionStore>();
     let (_, task_dispatch) = use_store::<TaskStore>();
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
 
     let onsubmit = {
         let error_data = error_data.clone();
-        Callback::from(move |event: FocusEvent| {
+        Callback::from(move |event: SubmitEvent| {
             event.prevent_default();
             let auth_data = auth_data.clone();
             let error_data = error_data.clone();
@@ -60,12 +60,12 @@ pub fn create_account() -> Html {
                         session_dispatch.clone().reduce(|store| {
                             let mut store = store.deref().clone();
                             store.user = Some(auth);
-                            store
+                            store.into()
                         });
                         task_dispatch.reduce(|_| {
-                            TaskStore::default()
+                            TaskStore::default().into()
                         });
-                        history.push(Route::Home)
+                        history.push(&Route::Home)
                     }
                     Err(error) => handle_api_error(error, &session_dispatch, Some(error_data))
                 }

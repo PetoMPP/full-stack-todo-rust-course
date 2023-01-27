@@ -78,7 +78,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
         })
     };
 
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
 
     {
         let task_store = task_store.clone();
@@ -147,14 +147,14 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
                 let response = TasksService::update_task(token.clone(), task.clone()).await;
                 match response {
                     Ok(()) => {
-                        history.push(Route::TaskDetails {
-                            id: task.id.clone(),
+                        history.push(&Route::TaskDetails {
+                            id: task.id,
                         });
                         task_dispatch.reduce(|store| {
                             edit_state.set(false);
                             let mut store = store.deref().clone();
                             store.tasks_valid = false;
-                            store
+                            store.into()
                         })
                     }
                     Err(error) => handle_api_error(error, &session_dispatch, Some(error_data))
@@ -166,7 +166,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
     let history = history.clone();
     let goto_home = {
         let history = history.clone();
-        Callback::from(move |_| history.push(Route::Home))
+        Callback::from(move |_| history.push(&Route::Home))
     };
 
     let delete_task = {
@@ -179,7 +179,7 @@ pub fn task_details(props: &TaskDetailsProperties) -> Html {
             task_dispatch.clone(),
             session_dispatch.clone(),
             session_store.user.clone().unwrap().token.clone(),
-            move || history.push(Route::Home),
+            move || history.push(&Route::Home),
             Some(error_data.clone())
         )
     };
