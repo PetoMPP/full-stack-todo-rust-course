@@ -180,6 +180,7 @@ impl Styles {
 
     let div_style = style!(
         r#"
+            display: flex;
             padding: 1em;
             a {
                 margin: 0 0.1em;

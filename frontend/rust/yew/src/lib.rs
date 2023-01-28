@@ -1,33 +1,41 @@
 use std::rc::Rc;
 
 use api::{auth::auth::Auth, tasks::todo_task::TodoTask};
-use serde::{Serialize, Deserialize};
+use serde::{Deserialize, Serialize};
+use stylist::{
+    style,
+    yew::{styled_component, Global},
+};
 use yew::prelude::*;
 use yew_router::prelude::*;
-use stylist::{yew::{styled_component, Global}, style};
 use yewdux::prelude::*;
 
-use crate::{router::{Route, switch}, app_context::AppContext, styles::color::Color};
+use crate::{
+    app_context::AppContext,
+    components::molecules::theme_selector::ThemeSelector,
+    router::{switch, Route},
+    styles::color::Color,
+};
 
 mod components;
 use components::organisms::navbar::Navbar;
+mod api;
+mod app_context;
 mod router;
 mod styles;
-mod api;
 mod utils;
-mod app_context;
 
 const MAIN_STYLESHEET: &str = include_str!("main.css");
 
 #[derive(Default, PartialEq, Clone, Debug, Store, Serialize, Deserialize)]
-#[store(storage="session", storage_tab_sync)]
-pub struct SessionStore{
+#[store(storage = "session", storage_tab_sync)]
+pub struct SessionStore {
     user: Option<Auth>,
-    theme: Option<String>
+    theme: Option<String>,
 }
 
 #[derive(Default, PartialEq, Clone, Debug, Store)]
-pub struct TaskStore{
+pub struct TaskStore {
     tasks: Option<Vec<TodoTask>>,
     tasks_valid: bool,
 }
@@ -36,16 +44,20 @@ pub struct TaskStore{
 pub fn app() -> Html {
     let (session_store, _) = use_store::<SessionStore>();
     let theme = session_store.theme.clone();
-    let ctx = use_memo(|t| {
-        let mut ctx = AppContext::default();
-        if let Some(theme) = &t {
-            ctx.set_theme(theme.as_str())
-        };
-        ctx
-    }, theme);
+    let ctx = use_memo(
+        |t| {
+            let mut ctx = AppContext::default();
+            if let Some(theme) = &t {
+                ctx.set_theme(theme.as_str())
+            };
+            ctx
+        },
+        theme,
+    );
     let mut css = MAIN_STYLESHEET.to_string();
-    css.push_str(format!(
-        r#"
+    css.push_str(
+        format!(
+            r#"
             html, body {{
                 background-color: {primaryBg};
             }}
@@ -58,10 +70,12 @@ pub fn app() -> Html {
                 color: {primary};
             }}
         "#,
-        primary = Color::Primary.get_css_color(&ctx),
-        primaryBg = Color::PrimaryBg.get_css_color(&ctx),
-        highlight = Color::Highlight.get_css_color(&ctx),
-    ).as_str());
+            primary = Color::Primary.get_css_color(&ctx),
+            primaryBg = Color::PrimaryBg.get_css_color(&ctx),
+            highlight = Color::Highlight.get_css_color(&ctx),
+        )
+        .as_str(),
+    );
     let body_style = style!(
         r#"
         -ms-overflow-style: none;  /* Internet Explorer 10+ */
@@ -71,7 +85,9 @@ pub fn app() -> Html {
         ::-webkit-scrollbar { 
             display: none;  /* Safari and Chrome */
         }
-        "#).unwrap();
+        "#
+    )
+    .unwrap();
     html! {
         <>
         <ContextProvider<Rc<AppContext>> context={ctx}>
@@ -81,6 +97,7 @@ pub fn app() -> Html {
                 <div class={body_style}>
                     <Switch<Route> render={switch}/>
                 </div>
+                <ThemeSelector/>
             </BrowserRouter>
         </ContextProvider<Rc<AppContext>>>
         </>

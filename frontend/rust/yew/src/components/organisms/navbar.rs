@@ -6,7 +6,6 @@ use yew::prelude::*;
 use yewdux::prelude::use_store;
 
 use crate::app_context::AppContext;
-use crate::components::atoms::button::Button;
 use crate::{SessionStore, TaskStore};
 use crate::components::atoms::route_link::RouteLink;
 use crate::router::Route;
@@ -26,25 +25,6 @@ pub fn navbar(props: &NavbarProperties) -> Html {
     let (_, task_dispatch) = use_store::<TaskStore>();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (style, div_style) = Styles::get_navbar_styles(&ctx, props.fore_color.as_ref(), props.back_color.as_ref());
-    
-    let switch_theme = session_dispatch.reduce_mut_callback(move | e | {
-        let ctx = ctx.clone();
-        let themes = ctx.get_themes();
-        let get_theme = ctx.get_theme();
-        let curr = themes.iter().enumerate().find(|(_, t)| {
-            t.name == get_theme.name
-        }).unwrap().0;
-
-        let next = if curr == themes.len() - 1 {
-            0
-        }
-        else {
-            curr + 1
-        };
-        
-        e.theme = Some(themes[next].clone().name);
-        e.clone()
-    });
 
     let logout = {
         let session_dispatch = session_dispatch.clone();
@@ -71,7 +51,6 @@ pub fn navbar(props: &NavbarProperties) -> Html {
                     fore_color={props.fore_color.clone()}
                     back_color={props.back_color.clone()}/>
             </div>
-            <Button label={"change theme"} onclick={switch_theme}/>
             if let None = session_store.user {
                 <div class={div_style}>
                     <RouteLink
