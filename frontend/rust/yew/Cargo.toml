@@ -6,10 +6,10 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-yew = "0.19.3"
-stylist = { version = "0.10.1", features = ["yew", "macros"] }
-yew-router = "0.16.0"
-yewdux = "0.8.2"
+yew = { version = "0.20.0", features = ["csr"] }
+stylist = { version = "0.12.0", features = ["yew", "macros", "parser"] }
+yew-router = "0.17.0"
+yewdux = "0.9.0"
 getrandom = { version = "0.2.7", features = ["js"] }
 web-sys = { version = "0.3.60", features = ["HtmlInputElement"] }
 gloo = "0.8.0"

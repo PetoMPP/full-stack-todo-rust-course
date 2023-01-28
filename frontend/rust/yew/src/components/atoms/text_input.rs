@@ -1,8 +1,10 @@
+use std::rc::Rc;
+
 use gloo::utils::document;
 use stylist::{yew::styled_component, Style};
 use yew::prelude::*;
 
-use crate::styles::color::Color;
+use crate::{styles::color::Color, app_context::AppContext};
 
 #[derive(PartialEq, Clone)]
 pub enum ControlType {
@@ -25,6 +27,7 @@ pub struct TextInputProperties {
 
 #[styled_component(TextInput)]
 pub fn text_input(props: &TextInputProperties) -> Html {
+    let ctx: Rc<AppContext> = use_context().unwrap();
     let input_style = format!(
         r#"
         ::placeholder {{ /* Chrome, Firefox, Opera, Safari 10.1+ */
@@ -48,9 +51,9 @@ pub fn text_input(props: &TextInputProperties) -> Html {
         border-radius: 3px;
         border: 1px solid transparent;
     "#,
-        primary_bg = Color::PrimaryBg.get_css_color(),
-        secondary = Color::Secondary.get_css_color(),
-        secondary_bg = Color::SecondaryBg.get_css_color()
+        primary_bg = Color::PrimaryBg.get_css_color(&ctx),
+        secondary = Color::Secondary.get_css_color(&ctx),
+        secondary_bg = Color::SecondaryBg.get_css_color(&ctx)
     );
 
     let input_style = Style::new(input_style).unwrap();
@@ -60,7 +63,7 @@ pub fn text_input(props: &TextInputProperties) -> Html {
         margin-bottom: 10px;
         color: {};
     "#,
-        Color::Primary.get_css_color()
+        Color::Primary.get_css_color(&ctx)
     );
 
     let label_style = Style::new(label_style).unwrap();
@@ -77,7 +80,7 @@ pub fn text_input(props: &TextInputProperties) -> Html {
     let input_type = props.input_type.clone().unwrap_or("text".to_owned());
     let data_test = props.data_test.clone().unwrap_or_default();
     let control_type = props.control_type.clone().unwrap_or(ControlType::Input);
-    let rows = props.rows.clone().unwrap_or(1);
+    let rows = props.rows.unwrap_or(1);
     let id = props.id.clone().unwrap_or_default();
 
     {

@@ -1,9 +1,9 @@
-use std::borrow::Borrow;
+use std::{borrow::Borrow, rc::Rc};
 
 use stylist::{yew::styled_component, Style};
 use yew::prelude::*;
 
-use crate::styles::color::Color;
+use crate::{styles::color::Color, app_context::AppContext};
 
 #[derive(Properties, PartialEq)]
 pub struct PriorityProperties {
@@ -13,6 +13,7 @@ pub struct PriorityProperties {
 
 #[styled_component(Priority)]
 pub fn priority(props: &PriorityProperties) -> Html {
+    let ctx: Rc<AppContext> = use_context().unwrap();
     let bg_color = match props.text.clone().borrow() {
         "A" => Color::CustomStr("red".to_string()),
         "B" => Color::CustomStr("orange".to_string()),
@@ -33,7 +34,7 @@ pub fn priority(props: &PriorityProperties) -> Html {
         justify-content: center;
         "#,
         fg_color = "white",
-        bg_color = bg_color.get_css_color()
+        bg_color = bg_color.get_css_color(&ctx)
     ))
     .unwrap();
 

@@ -54,6 +54,6 @@ fn clear_user_store(dispatch: &Dispatch<SessionStore>) {
     dispatch.reduce(|store| {
         let mut store = store.deref().clone();
         store.user = None;
-        store
+        store.into()
     });
 }

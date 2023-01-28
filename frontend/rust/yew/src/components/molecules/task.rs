@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use stylist::{style, yew::styled_component, Style};
 use yew::prelude::*;
 
@@ -5,7 +7,7 @@ use crate::{
     api::tasks::todo_task::TodoTask,
     components::atoms::{checkbox::Checkbox, route_link::RouteLink, priority::Priority},
     router::Route,
-    styles::color::Color,
+    styles::color::Color, app_context::AppContext,
 };
 
 #[derive(Properties, PartialEq)]
@@ -17,7 +19,8 @@ pub struct TaskProperties {
 
 #[styled_component(Task)]
 pub fn task(props: &TaskProperties) -> Html {
-    let task = props.todo_task.clone();
+    let ctx: Rc<AppContext> = use_context().unwrap();
+    let task = &props.todo_task;
     let mut hide_completion = false;
     let (creation_time, creation_date) = match task.created_at() {
         Some(datetime) => (datetime.time().format("%H:%M").to_string(), datetime.date().format("%d/%m/%y").to_string()),
@@ -45,7 +48,7 @@ pub fn task(props: &TaskProperties) -> Html {
             width: 100%;
         }}
         "#,
-        highlight2 = Color::Highlight2.get_css_color()
+        highlight2 = Color::Highlight2.get_css_color(&ctx)
     ))
     .unwrap();
     let up_style = Style::new(format!(
@@ -68,7 +71,7 @@ pub fn task(props: &TaskProperties) -> Html {
             font-weight: 500;
         }}
         "#,
-        secondary = Color::Secondary.get_css_color()
+        secondary = Color::Secondary.get_css_color(&ctx)
     ))
     .unwrap();
     let down_style = Style::new(format!(
@@ -94,8 +97,8 @@ pub fn task(props: &TaskProperties) -> Html {
             margin: 0.25rem 0;
         }}
         "#,
-        secondary = Color::Secondary.get_css_color(),
-        secondaryBg = Color::SecondaryBg.get_css_color()
+        secondary = Color::Secondary.get_css_color(&ctx),
+        secondaryBg = Color::SecondaryBg.get_css_color(&ctx)
     ))
     .unwrap();
 
@@ -184,7 +187,7 @@ pub fn task(props: &TaskProperties) -> Html {
                 }
                 </div>
             </div>
-                <p style={"margin-left: 0.25rem;"}>{&task.description.unwrap_or("Go to task details!".to_string())}</p>
+                <p style={"margin-left: 0.25rem;"}>{task.description.as_ref().unwrap_or(&"Go to task details!".to_string())}</p>
             </div>
         </div>
     }

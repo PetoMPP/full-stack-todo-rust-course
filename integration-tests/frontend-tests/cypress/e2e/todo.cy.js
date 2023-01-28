@@ -58,7 +58,7 @@ describe("todo app", () => {
           "I am a task, you can complete me by checking the box"
         )
         .dget("tasklink")
-        .should("contain", "See my details for by clicking me");
+        .should("contain", "See my details by clicking me");
     });
   });
 
@@ -72,7 +72,7 @@ describe("todo app", () => {
       cy.createAccount(username, password);
     });
 
-    it("should load the details for a single task", () => {
+    it("should load the details a single task", () => {
       cy.dget("tasklink")
         .first()
         .click()
@@ -275,7 +275,7 @@ describe("todo app", () => {
         .select("Creation time")
         .dget("tasklink")
         .eq(1)
-        .should("contain", "See my details for by clicking me");
+        .should("contain", "See my details by clicking me");
     });
 
     it("should allow users to filter the tasks", () => {
@@ -296,7 +296,7 @@ describe("todo app", () => {
         .dget("tasklink")
         .should("have.length", 1)
         .dget("tasklink")
-        .should("contain", "See my details for by clicking me")
+        .should("contain", "See my details by clicking me")
         .dget("filter")
         .select("Priority A")
         .dget("tasklink")
@@ -311,7 +311,7 @@ describe("todo app", () => {
         .dget("tasklink")
         .should("have.length", 1)
         .dget("tasklink")
-        .should("contain", "See my details for by clicking me")
+        .should("contain", "See my details by clicking me")
         .dget("filter")
         .select("Priority C")
         .dget("tasklink")

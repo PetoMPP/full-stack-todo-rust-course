@@ -1,9 +1,11 @@
+use std::rc::Rc;
+
 use chrono::Duration;
 use gloo::timers::callback::Timeout;
 use stylist::{yew::styled_component, Style};
 use yew::prelude::*;
 
-use crate::styles::color::Color;
+use crate::{styles::color::Color, app_context::AppContext};
 
 pub const DEFAULT_TIMEOUT_MS: u32 = 10000;
 
@@ -17,6 +19,7 @@ pub struct ErrorMessageProperties {
 
 #[styled_component(ErrorMessage)]
 pub fn error_message(props: &ErrorMessageProperties) -> Html {
+    let ctx: Rc<AppContext> = use_context().unwrap();
     let show_error = use_state(|| true);
     
     let timeout_ms = match props.timeout.clone() {
@@ -64,7 +67,7 @@ pub fn error_message(props: &ErrorMessageProperties) -> Html {
         text-align: center;
         {display}
         "#,
-        error = Color::Error.get_css_color(),
+        error = Color::Error.get_css_color(&ctx),
         display = display_style,
         duration = timeout
     )).unwrap();
