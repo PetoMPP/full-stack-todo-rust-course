@@ -1,3 +1,5 @@
+use std::rc::Rc;
+
 use crate::{
     api::auth::auth_service::AuthService,
     components::{
@@ -6,7 +8,7 @@ use crate::{
     },
     router::Route,
     styles::{color::Color, styles::Styles},
-    SessionStore, TaskStore, utils::handle_api_error,
+    SessionStore, TaskStore, utils::handle_api_error, app_context::AppContext,
 };
 use lazy_static::__Deref;
 use wasm_bindgen_futures::spawn_local;
@@ -20,6 +22,7 @@ use super::{auth_data::AuthData, error_data::ErrorData};
 #[function_component(CreateAccount)]
 pub fn create_account() -> Html {
     let auth_data = use_mut_ref(|| AuthData::default());
+    let ctx = use_context::<Rc<AppContext>>().unwrap();
 
     let onchange = {
         let auth_data = auth_data.clone();
@@ -81,7 +84,7 @@ pub fn create_account() -> Html {
             <ErrorMessage message={error_data.message.clone()}/>
         }
         <form class={style} {onsubmit}>
-            <h2 class={Color::Secondary.into_style("color")}>{"Create account"}</h2>
+            <h2 class={Color::Secondary.into_style("color", &ctx)}>{"Create account"}</h2>
             <TextInput id={"username"} onchange={onchange.clone()} label={"Your username"} placeholder={"enter username.."} data_test={"username"}/>
             <TextInput id={"password"} {onchange} label={"Your password"} input_type={"password"} placeholder={"enter password.."} data_test={"password"}/>
             <div>

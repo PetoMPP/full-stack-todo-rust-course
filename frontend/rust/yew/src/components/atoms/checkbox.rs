@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use stylist::{yew::styled_component, Style};
 use yew::prelude::*;
 
-use crate::styles::color::Color;
+use crate::{styles::color::Color, app_context::AppContext};
 
 #[derive(PartialEq, Clone, Copy)]
 pub enum LabelLocation {
@@ -29,12 +31,13 @@ pub struct CheckboxProperties {
 
 #[styled_component(Checkbox)]
 pub fn checkbox(props: &CheckboxProperties) -> Html {
+    let ctx: Rc<AppContext> = use_context().unwrap();
     let label_style = Style::new(format!(
         r#"
         margin-right: 20px;
         color: {};
     "#,
-        Color::Primary.get_css_color()
+        Color::Primary.get_css_color(&ctx)
     ))
     .unwrap();
 
@@ -54,8 +57,8 @@ pub fn checkbox(props: &CheckboxProperties) -> Html {
         height: {size};
         width: {size};
         "#,
-        color = Color::Highlight.get_css_color(),
-        back_color = Color::Secondary.get_css_color(),
+        color = Color::Highlight.get_css_color(&ctx),
+        back_color = Color::Secondary.get_css_color(&ctx),
         size = props.size.clone().unwrap_or("max(2vh, 1em, 1rem)".to_string())
     ))
     .unwrap();

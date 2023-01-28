@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use stylist::{yew::styled_component, Style};
 use yew::prelude::*;
 
-use crate::styles::color::Color;
+use crate::{styles::color::Color, app_context::AppContext};
 
 #[derive(Properties, PartialEq)]
 pub struct TextDisplayProperties {
@@ -13,11 +15,12 @@ pub struct TextDisplayProperties {
 
 #[styled_component(TextDisplay)]
 pub fn text_input(props: &TextDisplayProperties) -> Html {
+    let ctx: Rc<AppContext> = use_context().unwrap();
     let input_style = format!(
         r#"
         color: {};
     "#,
-        Color::Secondary.get_css_color()
+        Color::Secondary.get_css_color(&ctx)
     );
 
     let input_style = Style::new(input_style).unwrap();
@@ -26,7 +29,7 @@ pub fn text_input(props: &TextDisplayProperties) -> Html {
         r#"
         color: {};
     "#,
-        Color::Primary.get_css_color()
+        Color::Primary.get_css_color(&ctx)
     );
 
     let label_style = Style::new(label_style).unwrap();

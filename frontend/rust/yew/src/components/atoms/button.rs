@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use stylist::{yew::styled_component, Style};
 use yew::prelude::*;
 
-use crate::styles::color::Color;
+use crate::{styles::color::Color, app_context::AppContext};
 
 #[derive(Properties, PartialEq)]
 pub struct ButtonProperties {
@@ -15,9 +17,10 @@ pub struct ButtonProperties {
 
 #[styled_component(Button)]
 pub fn button(props: &ButtonProperties) -> Html {
-    let color = props.fore_color.clone().unwrap_or(Color::PrimaryBg);
-    let background_color = props.back_color.clone().unwrap_or(Color::Highlight);
-    let hover_color = props.hover_color.clone().unwrap_or(Color::Highlight2);
+    let ctx: Rc<AppContext> = use_context().unwrap();
+    let color = props.fore_color.as_ref().unwrap_or(&Color::PrimaryBg);
+    let background_color = props.back_color.as_ref().unwrap_or(&Color::Highlight);
+    let hover_color = props.hover_color.as_ref().unwrap_or(&Color::Highlight2);
 
     let style_string = format!(
         r#"
@@ -40,9 +43,9 @@ pub fn button(props: &ButtonProperties) -> Html {
         }}
 
     "#,
-        color = color.get_css_color(),
-        background_color = background_color.get_css_color(),
-        hover_color = hover_color.get_css_color()
+        color = color.get_css_color(&ctx),
+        background_color = background_color.get_css_color(&ctx),
+        hover_color = hover_color.get_css_color(&ctx)
     );
 
     let style = Style::new(style_string).unwrap();

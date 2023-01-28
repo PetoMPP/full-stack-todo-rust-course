@@ -1,8 +1,9 @@
-use std::collections::HashMap;
-
+use serde::{Deserialize, Serialize};
 use stylist::Style;
 
-#[derive(PartialEq, Clone, Eq, Hash)]
+use crate::AppContext;
+
+#[derive(PartialEq, Clone, Eq, Hash, Serialize, Deserialize, Debug)]
 pub enum Color {
     Primary,
     PrimaryBg,
@@ -15,12 +16,12 @@ pub enum Color {
     CustomStr(String)
 }
 
-#[derive(PartialEq, Clone, Eq, Hash)]
+#[derive(PartialEq, Clone, Eq, Hash, Serialize, Deserialize, Debug)]
 pub struct CssColor {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8
 }
 
 impl CssColor {
@@ -31,32 +32,12 @@ impl CssColor {
 }
 
 impl Color {
-    pub fn into_style(&self, target: &str) -> Style {
-        Style::new(format!("{}: {};", target, self.get_css_color()))
+    pub fn into_style(&self, target: &str, ctx: &AppContext) -> Style {
+        Style::new(format!("{}: {};", target, self.get_css_color(ctx)))
         .unwrap()
     }
 
-    pub fn get_css_color(&self) -> String {
-        let color_values = Self::get_color_values();
-        match self {
-            Color::CustomStr(color) => color.to_owned(),
-            color => {
-                let css_color = color_values.get(color).unwrap();
-                format!("rgba({}, {}, {}, {}%)", css_color.r, css_color.g, css_color.b, css_color.a)
-            }
-        }
-    }
-
-    fn get_color_values() -> HashMap<Color, CssColor> {
-        HashMap::from([
-            (Color::Primary, CssColor::new(142, 202, 230, 100)),
-            (Color::PrimaryBg, CssColor::new(2, 48, 71, 100)),
-            (Color::Secondary, CssColor::new(33, 156, 186, 100)),
-            (Color::SecondaryBg, CssColor::new(220, 235, 250, 100)),
-            (Color::Highlight, CssColor::new(255, 183, 3, 100)), 
-            (Color::Highlight2, CssColor::new(251, 133, 0, 100)),
-            (Color::Error, CssColor::new(158, 42, 43, 100)),
-            (Color::Error2, CssColor::new(213, 47, 49, 100))
-         ])
+    pub fn get_css_color(&self, ctx: &AppContext) -> String {
+        ctx.get_theme().get_css_color(&self)
     }
 }

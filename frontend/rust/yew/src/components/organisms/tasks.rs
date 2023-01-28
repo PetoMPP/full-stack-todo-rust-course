@@ -17,7 +17,7 @@ use crate::{
     pages::error_data::ErrorData},
     router::Route,
     styles::styles::Styles,
-    SessionStore, TaskStore, utils::handle_api_error,
+    SessionStore, TaskStore, utils::handle_api_error, app_context::AppContext,
 };
 
 #[derive(Clone, Copy)]
@@ -44,6 +44,7 @@ pub struct TasksProperties {
 
 #[function_component(Tasks)]
 pub fn tasks(props: &TasksProperties) -> Html {
+    let ctx = use_context::<Rc<AppContext>>().unwrap();
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (task_store, task_dispatch) = use_store::<TaskStore>();
     let history = use_navigator().unwrap();
@@ -124,7 +125,7 @@ pub fn tasks(props: &TasksProperties) -> Html {
         sort_state.set(sort);
     });
 
-    let (style, dropdown_style) = Styles::get_table_style();
+    let (style, dropdown_style) = Styles::get_table_style(&ctx);
     let tasks_style = style!(
         r#"
         display: flex;

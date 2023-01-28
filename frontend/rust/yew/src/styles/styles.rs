@@ -1,5 +1,7 @@
 use stylist::{Style, style};
 
+use crate::app_context::AppContext;
+
 use super::color::Color;
 
 pub struct Styles;
@@ -35,7 +37,7 @@ impl Styles {
 
     }
 
-    pub fn get_table_style() -> (Style, Style) {
+    pub fn get_table_style(ctx: &AppContext) -> (Style, Style) {
         let style = Style::new(format!(
             r#"
             margin-top: 1em;
@@ -72,9 +74,9 @@ impl Styles {
                 justify-content: center;
             }}
             "#,
-            primary_bg = Color::PrimaryBg.get_css_color(),
-            secondary = Color::Secondary.get_css_color(),
-            secondary_bg = Color::SecondaryBg.get_css_color()
+            primary_bg = Color::PrimaryBg.get_css_color(ctx),
+            secondary = Color::Secondary.get_css_color(ctx),
+            secondary_bg = Color::SecondaryBg.get_css_color(ctx)
         ))
         .unwrap();
 
@@ -89,14 +91,14 @@ impl Styles {
         (style, div_style)
     }
 
-    pub fn get_link_style(fore_color: Option<Color>, back_color: Option<Color>, hover_color: Option<Color>) -> Style {
-        let fore_color = match fore_color.clone() {
-            Some(color) => color.clone().get_css_color(),
-            None => Color::Primary.get_css_color()
+    pub fn get_link_style(ctx: &AppContext, fore_color: Option<&Color>, back_color: Option<&Color>, hover_color: Option<&Color>) -> Style {
+        let fore_color = match fore_color {
+            Some(color) => color.get_css_color(ctx),
+            None => Color::Primary.get_css_color(ctx)
         };
     
-        let hover_color = match hover_color.clone() {
-            Some(color) => color.clone().get_css_color(),
+        let hover_color = match hover_color {
+            Some(color) => color.get_css_color(ctx),
             None => fore_color.clone()
         };
     
@@ -111,8 +113,8 @@ impl Styles {
             "#,
             fore_color, hover_color);
     
-        if let Some(color) = back_color.clone() {
-            style_string = format!("{}background-color: {};", style_string, color.clone().get_css_color());
+        if let Some(color) = back_color {
+            style_string.push_str(format!("background-color: {};", color.get_css_color(ctx)).as_str());
         }
 
         Style::new(style_string).unwrap()
@@ -152,11 +154,11 @@ impl Styles {
         .unwrap()
     }
 
-    pub fn get_navbar_styles(fore_color: Option<Color>, back_color: Option<Color>) -> (Style, Style) {
+    pub fn get_navbar_styles(ctx: &AppContext, fore_color: Option<&Color>, back_color: Option<&Color>) -> (Style, Style) {
         
-    let fore_color = match fore_color.clone() {
-        Some(color) => color.get_css_color(),
-        None => Color::Primary.get_css_color(),
+    let fore_color = match fore_color {
+        Some(color) => color.get_css_color(ctx),
+        None => Color::Primary.get_css_color(ctx),
     };
 
     let mut style_string = format!(
@@ -171,7 +173,7 @@ impl Styles {
     );
 
     if let Some(back_color) = back_color.clone() {
-        style_string = format!("{} background-color: {}", style_string, back_color.get_css_color());
+        style_string.push_str(format!(" background-color: {}", back_color.get_css_color(ctx)).as_str());
     }
 
     let style = Style::new(style_string).unwrap();
