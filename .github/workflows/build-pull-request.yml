@@ -4,8 +4,8 @@ on:
   pull_request:
 
 env:
-  Node-dir: ${{ github.workspace }}/backend/nodejs/express
   Yew-dir: ${{ github.workspace }}/frontend/rust/yew
+  Dotnet-dir: ${{ github.workspace }}/backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
 
 jobs:
   build:
@@ -19,23 +19,19 @@ jobs:
         fetch-depth: 0
 
     # Build backend
-    # Node.js
-    - name: Install Node.js 14.x
-      uses: actions/setup-node@v3
+    # .NET
+    - name: Install .NET Core
+      uses: actions/setup-dotnet@v2
       with:
-        node-version: 14.x
+        dotnet-version: 6.0.x
 
-    - name: Install Node.js dependencies
-      run: npm ci
-      working-directory: ${{ env.Node-dir }}
+    - name: Build .NET
+      run: dotnet build -c Release
+      working-directory: ${{ env.Dotnet-dir }}
 
-    - name: Build Node.js
-      run: npm run build --if-present
-      working-directory: ${{ env.Node-dir }}
-
-    - name: Run Node.js tests
-      run: npm run test --if-present
-      working-directory: ${{ env.Node-dir }}
+    - name: Run .NET tests
+      run: dotnet test -c Release
+      working-directory: ${{ env.Dotnet-dir }}
 
     # Build frontend
     # Yew.rs
@@ -44,19 +40,24 @@ jobs:
       with: 
         toolchain: stable
 
+    - name: Initialize Rust cache
+      uses: Swatinem/rust-cache@v2
+      with:
+        workspaces: ${{ env.Yew-dir }}
+
+    - name: Install wasm target
+      run: rustup target add wasm32-unknown-unknown
+
+    - name: Install trunk
+      run: cargo install trunk
+      working-directory: ${{ env.Yew-dir }}
+
     - name: Build Yew
       run: cargo build
       working-directory: ${{ env.Yew-dir }}
 
     - name: Run Yew tests
       run: cargo test
-      working-directory: ${{ env.Yew-dir }}
-
-    - name: Install wasm target
-      run: rustup target add wasm32-unknown-unknown
-
-    - name: Install trunk
-      run: cargo install trunk --locked
       working-directory: ${{ env.Yew-dir }}
 
     - name: Build trunk

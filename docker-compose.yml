@@ -1,41 +1,35 @@
 version: "3.9"
 services:
-  database:
+  postgres-db:
+    profiles:
+      - postgres-db
     image: postgres:14
     volumes:
       - db-data:/var/lib/postgresql/data
       - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
     environment:
-      - POSTGRES_PASSWORD=keyoarbcat
-  nodejs-express:
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+  dotnet-aspnet:
     profiles:
-      - nodejs-express
-      - compare-frontend
-      - js-vue
-      - rust-yew
-      - rust-yew-solution
-    build: ./backend/nodejs/express
+      - dotnet-aspnet
+    build: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
     volumes:
-      - ./backend/nodejs/express:/code/
-    depends_on:
-      - database
+      - ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC:/code/
     expose:
-      - "3000"
+      - "5000"
     ports:
-      - "30478:3000"
+      - "30478:5000"
     environment:
-      - PORT=3000
-      - JWT_SECRET=keyboardcat
-      - SALT_ROUNDS=10
-      - DB_CONNECTION=postgresql://postgres:keyoarbcat@database
+      - DB_MODE=${DB_MODE}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - JWT_SECRET=${JWT_SECRET}
   rust-yew:
     profiles:
-      - nodejs-express
+      - rust-yew
     build: ./frontend/rust/yew
     volumes:
       - ./frontend/rust/yew:/code/
-    depends_on:
-      - nodejs-express
     expose:
       - "8080"
     ports:
