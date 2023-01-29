@@ -3,6 +3,7 @@
     internal class Variables : IVariables
     {
         private const string DatabaseModeName = "DB_MODE";
+        private const string DatabaseHostName = "DB_HOST";
         private const string DatabaseUserName = "DB_USER";
         private const string DatabasePasswordName = "DB_PASSWORD";
         private const string JwtSecretName = "JWT_SECRET";
@@ -13,6 +14,12 @@
         {
             get => GetEnvironmentVariable(DatabaseModeName);
             set => SetEnvironmentVariable(DatabaseModeName, value);
+        }
+
+        public string DatabaseHost
+        {
+            get => GetEnvironmentVariable(DatabaseHostName);
+            set => SetEnvironmentVariable(DatabaseHostName, value);
         }
 
         public string DatabaseUser

@@ -62,7 +62,7 @@ namespace TodoAPI_MVC.Extensions
         private static string GetPostgresConnectionString(IVariables variables)
         {
             return
-                "Host=localhost:5432;" +
+                $"Host={variables.DatabaseHost}:5432;" +
                 $"Username={variables.DatabaseUser};" +
                 $"Password={variables.DatabasePassword}";
         }

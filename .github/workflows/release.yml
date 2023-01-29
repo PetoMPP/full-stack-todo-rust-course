@@ -2,35 +2,88 @@ name: 'Release'
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
+    inputs:
+      pull_delay_s:
+        description: 'Time in seconds to wait for pull to complete'
+        type: string
+        required: true
+        default: '30'
+      delete_volume:
+        description: 'Delete database volume'
+        type: boolean
+        required: true
+        default: false
   
 env:
-  pull-and-compose: |
+  pull: |
     cd ~/source/repos/${{ github.event.repository.name }}
-    git reset --hard
+    git checkout main
+    git reset --hard origin/main
     git pull
+    sleep ${{ github.event.inputs.pull_delay_s }}
+
+  clean: |
+    docker stop $(docker ps -a -q)
+    docker rm $(docker ps -a -q)
+    docker image rm $(docker images -a -q)
+    docker ps
+
+  delete_volume: |
+    docker volume rm ${{ github.event.repository.name }}_db-data
+    docker ps
+
+  compose: |
+    cd ~/source/repos/${{ github.event.repository.name }}
+    rm -f .env
     echo "DB_USER=${{ secrets.DB_USER }}" >> .env
     echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
     echo "DB_MODE=${{ secrets.DB_MODE }}" >> .env
     echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-    docker stop $(docker ps -a -q)
-    docker rm $(docker ps -a -q)
-    docker compose --profile postgres-db --profile dotnet-aspnet --profile rust-yew up --remove-orphans
+    docker compose --profile postgres --profile dotnet-aspnet --profile rust-yew up --remove-orphans
 
 jobs:
   build:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 60
 
     steps:
-    - name: Connect to mikr.us ssh
+    - name: Pull repo on mikr.us ssh
       uses: appleboy/ssh-action@master
       with:
         host: ${{ secrets.SSH_HOST }}
         port: ${{ secrets.SSH_PORT }}
         username: ${{ secrets.SSH_USER }}
         key: ${{ secrets.SSH_KEY }}
-        script: ${{ env.pull-and-compose }}
+        script: ${{ env.pull }}
+        command_timeout: 30m
+
+    - name: Clean docker on mikr.us ssh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        port: ${{ secrets.SSH_PORT }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: ${{ env.clean }}
+        command_timeout: 30m
+
+    - if: github.event.inputs.delete_volume == 'true'
+      name: Delete database volume on mikr.us ssh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        port: ${{ secrets.SSH_PORT }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: ${{ env.delete_volume }}
+        command_timeout: 30m
+
+    - name: Compose on mikr.us ssh
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.SSH_HOST }}
+        port: ${{ secrets.SSH_PORT }}
+        username: ${{ secrets.SSH_USER }}
+        key: ${{ secrets.SSH_KEY }}
+        script: ${{ env.compose }}
         command_timeout: 30m

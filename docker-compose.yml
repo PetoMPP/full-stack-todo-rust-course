@@ -1,8 +1,8 @@
 version: "3.9"
 services:
-  postgres-db:
+  postgres:
     profiles:
-      - postgres-db
+      - postgres
     image: postgres:14
     volumes:
       - db-data:/var/lib/postgresql/data
@@ -10,29 +10,36 @@ services:
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
   dotnet-aspnet:
+    depends_on:
+      - postgres
     profiles:
       - dotnet-aspnet
     build: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
     volumes:
       - ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC:/code/
     expose:
-      - "5000"
+      - 5000
     ports:
-      - "30478:5000"
+      - 30478:5000
     environment:
       - DB_MODE=${DB_MODE}
+      - DB_HOST=postgres
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - API_ADMIN_USER=admin
+      - API_ADMIN_PASSWORD=Adm1n!
   rust-yew:
+    depends_on:
+      - dotnet-aspnet
     profiles:
       - rust-yew
     build: ./frontend/rust/yew
     volumes:
       - ./frontend/rust/yew:/code/
     expose:
-      - "8080"
+      - 8080
     ports:
-      - "20478:8080"
+      - 20478:8080
 volumes:
   db-data:
