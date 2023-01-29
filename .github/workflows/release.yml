@@ -17,7 +17,7 @@ env:
     echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
     docker stop $(docker ps -a -q)
     docker rm $(docker ps -a -q)
-    docker compose --profile postgres-db --profile dotnet-aspnet --profile rust-yew up --remove-orphans
+    docker compose --profile postgres --profile dotnet-aspnet --profile rust-yew up --remove-orphans
 
 jobs:
   build:
