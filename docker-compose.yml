@@ -10,6 +10,8 @@ services:
     environment:
       - POSTGRES_PASSWORD=${DB_PASSWORD}
   dotnet-aspnet:
+    depends_on:
+      - postgres-db
     profiles:
       - dotnet-aspnet
     build: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
@@ -24,7 +26,11 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
+      - API_ADMIN_USER=admin
+      - API_ADMIN_PASSWORD=Adm1n!
   rust-yew:
+    depends_on:
+      - dotnet-aspnet
     profiles:
       - rust-yew
     build: ./frontend/rust/yew
