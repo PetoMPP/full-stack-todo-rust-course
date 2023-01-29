@@ -24,21 +24,6 @@ services:
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
-  nodejs-express:
-    profiles:
-      - nodejs-express
-    build: ./backend/nodejs/express
-    volumes:
-      - ./backend/nodejs/express:/code/
-    expose:
-      - "3000"
-    ports:
-      - "30478:3000"
-    environment:
-      - PORT=3000
-      - JWT_SECRET=${JWT_SECRET}
-      - SALT_ROUNDS=10
-      - DB_CONNECTION=postgresql://${DB_USER}:${DB_PASSWORD}@database
   rust-yew:
     profiles:
       - rust-yew

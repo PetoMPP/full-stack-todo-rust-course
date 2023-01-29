@@ -11,9 +11,13 @@ env:
     cd ~/source/repos/${{ github.event.repository.name }}
     git reset --hard
     git pull
+    echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+    echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+    echo "DB_MODE=${{ secrets.DB_MODE }}" >> .env
+    echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
     docker stop $(docker ps -a -q)
     docker rm $(docker ps -a -q)
-    docker compose --profile dotnet-aspnet --profile rust-yew --remove-orphans up
+    docker compose --profile postgres-db --profile dotnet-aspnet --profile rust-yew up --remove-orphans
 
 jobs:
   build:
