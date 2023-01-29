@@ -1,5 +1,5 @@
 use crate::{
-    api::tasks::{task::Task, tasks_service::TasksService},
+    api::tasks::{todo_task::TodoTask, tasks_service::TasksService},
     components::{
         atoms::{
             button::Button,
@@ -17,7 +17,6 @@ use crate::{
     styles::{color::Color, styles::Styles},
     SessionStore, TaskStore, utils::handle_api_error,
 };
-use chrono::Local;
 use lazy_static::__Deref;
 use stylist::yew::styled_component;
 use wasm_bindgen_futures::spawn_local;
@@ -30,11 +29,11 @@ use yewdux::prelude::*;
 pub fn new_task() -> Html {
     let (style, button_style) = Styles::get_editable_details_style();
 
-    let history = use_history().unwrap();
+    let history = use_navigator().unwrap();
     let history = history.clone();
     let goto_home = {
         let history = history.clone();
-        Callback::from(move |_| history.push(Route::Home))
+        Callback::from(move |_| history.push(&Route::Home))
     };
 
     let error_data = use_state(|| ErrorData::default());
@@ -42,11 +41,13 @@ pub fn new_task() -> Html {
     let (session_store, session_dispatch) = use_store::<SessionStore>();
     let (_, task_dispatch) = use_store::<TaskStore>();
 
-    let task_data = use_mut_ref(|| Task::default());
+    let task_data = use_mut_ref(|| TodoTask::default());
+    let create_task_as_completed = use_mut_ref(|| false);
 
     let task_dispatch = task_dispatch.clone();
     let onchange = {
         let task_data = task_data.clone();
+        let create_task_as_completed = create_task_as_completed.clone();
         Callback::from(move |event: Event| {
             let target_element = event.target_unchecked_into::<HtmlInputElement>();
             let value = target_element.value();
@@ -66,11 +67,7 @@ pub fn new_task() -> Html {
                     }
                 }
                 "completed" => {
-                    task_data.borrow_mut().completed_at = if task_data.borrow_mut().completed() {
-                        None
-                    } else {
-                        Some(Local::now().to_string())
-                    }
+                    *create_task_as_completed.borrow_mut() = target_element.checked();
                 }
                 _ => (),
             };
@@ -85,15 +82,16 @@ pub fn new_task() -> Html {
             None => None,
         };
         let task_data = task_data.clone();
-
+        let create_task_as_completed = create_task_as_completed.clone();
         let task_dispatch = task_dispatch.clone();
         let session_dispatch = session_dispatch.clone();
         Callback::from(move |_: MouseEvent| {
             let history = history.clone();
             let task_dispatch = task_dispatch.clone();
             let session_dispatch = session_dispatch.clone();
+            let create_task_as_completed = create_task_as_completed.clone();
             let token = token.clone();
-            let task: Task = task_data.deref().clone().into();
+            let task: TodoTask = task_data.deref().clone().into();
             let error_data = error_data.clone();
 
             if let None = token {
@@ -102,17 +100,17 @@ pub fn new_task() -> Html {
 
             spawn_local(async move {
                 let response =
-                    TasksService::create_task(token.clone().unwrap(), task.clone()).await;
+                    TasksService::create_task(token.clone().unwrap(), task.clone(), *create_task_as_completed.borrow()).await;
                 match response {
                     Ok(_) => {
-                        history.push(Route::Home);
+                        history.push(&Route::Home);
                         task_dispatch.reduce(|store| {
                             let mut store = store.deref().clone();
                             store.tasks_valid = false;
-                            store
+                            store.into()
                         })
                     }
-                    Err(error) => handle_api_error(error, session_dispatch, Some(error_data))
+                    Err(error) => handle_api_error(error, &session_dispatch, Some(error_data))
                 }
             })
         })

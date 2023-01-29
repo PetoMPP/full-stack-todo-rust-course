@@ -4,3 +4,6 @@
 **/integration-tests/**/*.png
 **/target
 **/dist
+**/.vs
+**/bin
+**/obj

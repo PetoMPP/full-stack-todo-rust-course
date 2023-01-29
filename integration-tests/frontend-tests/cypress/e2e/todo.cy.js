@@ -14,7 +14,7 @@ describe("todo app", () => {
   describe("creating an account", () => {
     it("should be able to create an account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
 
       cy.createAccount(username, password)
         .dget("create-account")
@@ -31,7 +31,7 @@ describe("todo app", () => {
   describe("logging into an account", () => {
     it("should be able to log into an existing account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
 
       cy.createAccount(username, password)
         .login(username, password)
@@ -45,7 +45,7 @@ describe("todo app", () => {
   describe("default todo items", () => {
     beforeEach("create account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
@@ -58,7 +58,7 @@ describe("todo app", () => {
           "I am a task, you can complete me by checking the box"
         )
         .dget("tasklink")
-        .should("contain", "See my details for by clicking me");
+        .should("contain", "See my details by clicking me");
     });
   });
 
@@ -68,11 +68,11 @@ describe("todo app", () => {
 
     beforeEach("create account", () => {
       username = faker.internet.userName();
-      password = faker.internet.password();
+      password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
-    it("should load the details for a single task", () => {
+    it("should load the details a single task", () => {
       cy.dget("tasklink")
         .first()
         .click()
@@ -130,7 +130,7 @@ describe("todo app", () => {
         .dget("priority")
         .should("contain", "B")
         .dget("completed")
-        .should("contain", "T")
+        .should("contain", "20")
         .dget("edit")
         .click()
         .dget("completed")
@@ -175,7 +175,7 @@ describe("todo app", () => {
   describe("creating a task", () => {
     beforeEach("create account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
@@ -222,7 +222,7 @@ describe("todo app", () => {
     let password;
     beforeEach("create account", () => {
       username = faker.internet.userName();
-      password = faker.internet.password();
+      password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
 
@@ -250,7 +250,7 @@ describe("todo app", () => {
   describe("home page", () => {
     beforeEach("create account", () => {
       const username = faker.internet.userName();
-      const password = faker.internet.password();
+      const password = faker.internet.password(20, true, /[a-zA-Z]/, '34$Ds');
       cy.createAccount(username, password);
     });
     it("should allow the user to sort the tasks", () => {
@@ -275,7 +275,7 @@ describe("todo app", () => {
         .select("Creation time")
         .dget("tasklink")
         .eq(1)
-        .should("contain", "See my details for by clicking me");
+        .should("contain", "See my details by clicking me");
     });
 
     it("should allow users to filter the tasks", () => {
@@ -296,7 +296,7 @@ describe("todo app", () => {
         .dget("tasklink")
         .should("have.length", 1)
         .dget("tasklink")
-        .should("contain", "See my details for by clicking me")
+        .should("contain", "See my details by clicking me")
         .dget("filter")
         .select("Priority A")
         .dget("tasklink")
@@ -311,7 +311,7 @@ describe("todo app", () => {
         .dget("tasklink")
         .should("have.length", 1)
         .dget("tasklink")
-        .should("contain", "See my details for by clicking me")
+        .should("contain", "See my details by clicking me")
         .dget("filter")
         .select("Priority C")
         .dget("tasklink")

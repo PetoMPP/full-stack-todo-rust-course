@@ -1,7 +1,9 @@
+use std::rc::Rc;
+
 use stylist::{yew::styled_component, Style};
 use yew::prelude::*;
 
-use crate::styles::color::Color;
+use crate::{styles::color::Color, app_context::AppContext};
 
 #[derive(PartialEq, Clone)]
 pub struct DropdownOption {
@@ -21,6 +23,7 @@ pub struct DropdownProperties {
 
 #[styled_component(Dropdown)]
 pub fn dropdown(props: &DropdownProperties) -> Html {
+    let ctx: Rc<AppContext> = use_context().unwrap();
     let select_style = format!(
         r#"
         color: {primary_bg};
@@ -28,8 +31,8 @@ pub fn dropdown(props: &DropdownProperties) -> Html {
         border-radius: 3px;
         border: 1px solid transparent;
     "#,
-        primary_bg = Color::PrimaryBg.get_css_color(),
-        secondary = Color::Secondary.get_css_color()
+        primary_bg = Color::PrimaryBg.get_css_color(&ctx),
+        secondary = Color::Secondary.get_css_color(&ctx)
     );
 
     let select_style = Style::new(select_style).unwrap();
@@ -39,7 +42,7 @@ pub fn dropdown(props: &DropdownProperties) -> Html {
         margin-bottom: 10px;
         color: {};
     "#,
-        Color::Primary.get_css_color()
+        Color::Primary.get_css_color(&ctx)
     );
 
     let label_style = Style::new(label_style).unwrap();

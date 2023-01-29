@@ -12,23 +12,20 @@ const USERS_URI: &str = "/users";
 
 impl AuthService {
     pub async fn login(username: String, password: String) -> Result<Auth, ApiError> {
-        let response: Result<Result<AuthResponse, ApiErrorResponse>, ApiError> = ApiClient::send_json(
+        let response = ApiClient::send_json::<AuthResponse, ApiErrorResponse>(
             LOGIN_URI,
             Method::POST,
         Some(AuthService::get_auth_body(username, password)),
         Some(AuthService::get_headers())).await;
 
         return match response {
-            Ok(ok) => match ok {
-                Ok(ok) => Ok(ok.data),
-                Err(error) => Err(ApiError::Other(error.error)),
-            },
+            Ok(ok) => Ok(ok.data),
             Err(error) => Err(error),
         }
     }
 
     pub async fn register(username: String, password: String) -> Result<Auth, ApiError> {
-        let response: Result<Result<AuthResponse, ApiErrorResponse>, ApiError> = ApiClient::send_json(
+        let response = ApiClient::send_json::<AuthResponse, ApiErrorResponse>(
             USERS_URI,
             Method::POST,
             Some(AuthService::get_auth_body(username, password)),
@@ -37,11 +34,8 @@ impl AuthService {
         .await;
 
         return match response {
-            Ok(ok) => match ok {
-                Ok(ok) => Ok(ok.data),
-                Err(error) => Err(ApiError::Other(error.error)),
-            },
-            Err(error) => Err(error),
+            Ok(ok) => Ok(ok.data),
+            Err(error) => Err(error)
         }
     }
 

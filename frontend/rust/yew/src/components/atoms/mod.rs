@@ -4,3 +4,4 @@ pub mod button;
 pub mod text_display;
 pub mod dropdown;
 pub mod checkbox;
+pub mod priority;
