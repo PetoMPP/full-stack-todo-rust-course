@@ -23,6 +23,7 @@ services:
       - "30478:5000"
     environment:
       - DB_MODE=${DB_MODE}
+      - DB_HOST=postgres-db
       - DB_USER=${DB_USER}
       - DB_PASSWORD=${DB_PASSWORD}
       - JWT_SECRET=${JWT_SECRET}
