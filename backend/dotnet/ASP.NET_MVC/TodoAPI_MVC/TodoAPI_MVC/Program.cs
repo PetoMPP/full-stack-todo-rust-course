@@ -17,15 +17,16 @@ namespace TodoAPI_MVC
             var variables = new Variables();
             ApplyArgs(args, variables);
 
-        #if DEBUG
+#if DEBUG
 
             variables.DatabaseMode = "postgres";
+            variables.DatabaseHost = "localhost";
             variables.DatabaseUser = "postgres";
             variables.DatabasePassword = "12345";
             variables.ApiAdminUser = "admin";
             variables.ApiAdminPassword = "Adm1n!";
 
-        #endif
+#endif
 
             var jsonSerializerOptions = new JsonSerializerOptions()
             {
