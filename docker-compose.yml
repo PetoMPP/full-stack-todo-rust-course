@@ -18,9 +18,9 @@ services:
     volumes:
       - ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC:/code/
     expose:
-      - "5000"
+      - 5000
     ports:
-      - "30478:5000"
+      - 30478:5000
     environment:
       - DB_MODE=${DB_MODE}
       - DB_HOST=postgres
@@ -38,8 +38,8 @@ services:
     volumes:
       - ./frontend/rust/yew:/code/
     expose:
-      - "8080"
+      - 8080
     ports:
-      - "20478:8080"
+      - 20478:8080
 volumes:
   db-data:
