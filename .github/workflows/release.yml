@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       pull_delay_s:
-        description: 'Time to wait for pull to complete'
+        description: 'Time in seconds to wait for pull to complete'
         type: string
         required: true
         default: '30'
