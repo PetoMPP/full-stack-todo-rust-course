@@ -26,9 +26,11 @@ env:
     docker stop $(docker ps -a -q)
     docker rm $(docker ps -a -q)
     docker image rm $(docker images -a -q)
+    docker ps
 
   delete_volume: |
     docker volume rm ${{ github.event.repository.name }}_db-data
+    docker ps
 
   compose: |
     echo "DB_USER=${{ secrets.DB_USER }}" >> .env
