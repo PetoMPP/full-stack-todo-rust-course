@@ -17,7 +17,6 @@ on:
 env:
   pull: |
     cd ~/source/repos/${{ github.event.repository.name }}
-    git reset --hard
     git checkout main
     git reset --hard origin/main
     git pull
