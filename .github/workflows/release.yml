@@ -33,6 +33,7 @@ env:
     docker ps
 
   compose: |
+    rm -f .env
     echo "DB_USER=${{ secrets.DB_USER }}" >> .env
     echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
     echo "DB_MODE=${{ secrets.DB_MODE }}" >> .env
