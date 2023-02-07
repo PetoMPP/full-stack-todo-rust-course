@@ -14,9 +14,10 @@ services:
       - postgres
     profiles:
       - dotnet-aspnet
-    build: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
-    volumes:
-      - ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC:/code/
+    image: ${ASPNET_IMAGE}
+    # build: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC
+    # volumes:
+    #   - ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC:/code/
     expose:
       - 5000
     ports:
@@ -34,9 +35,10 @@ services:
       - dotnet-aspnet
     profiles:
       - rust-yew
-    build: ./frontend/rust/yew
-    volumes:
-      - ./frontend/rust/yew:/code/
+    image: ${YEW_IMAGE}
+    # build: ./frontend/rust/yew
+    # volumes:
+    #   - ./frontend/rust/yew:/code/
     expose:
       - 8080
     ports:

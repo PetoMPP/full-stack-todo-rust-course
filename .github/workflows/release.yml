@@ -3,87 +3,48 @@ name: 'Release'
 on:
   workflow_dispatch:
     inputs:
-      pull_delay_s:
-        description: 'Time in seconds to wait for pull to complete'
-        type: string
+      target:
+        description: 'Select deploy target'
+        type: choice
+        options:
+        - 'mikr.us'
+        - 'Azure VM'
         required: true
-        default: '30'
+        default: 'Azure VM'
       delete_volume:
         description: 'Delete database volume'
         type: boolean
         required: true
         default: false
-  
-env:
-  pull: |
-    cd ~/source/repos/${{ github.event.repository.name }}
-    git checkout main
-    git reset --hard origin/main
-    git pull
-    sleep ${{ github.event.inputs.pull_delay_s }}
-
-  clean: |
-    docker stop $(docker ps -a -q)
-    docker rm $(docker ps -a -q)
-    docker image rm $(docker images -a -q)
-    docker ps
-
-  delete_volume: |
-    docker volume rm ${{ github.event.repository.name }}_db-data
-    docker ps
-
-  compose: |
-    cd ~/source/repos/${{ github.event.repository.name }}
-    rm -f .env
-    echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-    echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-    echo "DB_MODE=${{ secrets.DB_MODE }}" >> .env
-    echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-    docker compose --profile postgres --profile dotnet-aspnet --profile rust-yew up --remove-orphans
 
 jobs:
-  build:
+  push-containers:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 30
 
     steps:
-    - name: Pull repo on mikr.us ssh
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        port: ${{ secrets.SSH_PORT }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: ${{ env.pull }}
-        command_timeout: 30m
+    - name: Checkout
+      uses: actions/checkout@v3
 
-    - name: Clean docker on mikr.us ssh
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.SSH_HOST }}
-        port: ${{ secrets.SSH_PORT }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: ${{ env.clean }}
-        command_timeout: 30m
+    - name: Push containers to registry
+      uses: ./.github/workflows/push-containers.yml@main
 
-    - if: github.event.inputs.delete_volume == 'true'
-      name: Delete database volume on mikr.us ssh
-      uses: appleboy/ssh-action@master
+    - name: Read docker-compose.yml
+      id: compose_contents
+      uses: juliangruber/read-file-action@v1
       with:
-        host: ${{ secrets.SSH_HOST }}
-        port: ${{ secrets.SSH_PORT }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: ${{ env.delete_volume }}
-        command_timeout: 30m
+        path: ./docker-compose.yml
 
-    - name: Compose on mikr.us ssh
-      uses: appleboy/ssh-action@master
+    - if: github.event.inputs.target == 'mikr.us'
+      name: Deploy to mikr.us
+      uses: ./.github/workflows/deploy-mikrus.yml@main
       with:
-        host: ${{ secrets.SSH_HOST }}
-        port: ${{ secrets.SSH_PORT }}
-        username: ${{ secrets.SSH_USER }}
-        key: ${{ secrets.SSH_KEY }}
-        script: ${{ env.compose }}
-        command_timeout: 30m
+        delete_volume: ${{ github.event.inputs.delete_volume }}
+        compose_contents: ${{ github.steps.compose_contents.content }}
+
+    - if: github.event.inputs.target == 'Azure VM'
+      name: Deploy to Azure
+      uses: ./.github/workflows/deploy-azure.yml@main
+      with:
+        delete_volume: ${{ github.event.inputs.delete_volume }}
+        compose_contents: ${{ github.steps.compose_contents.content }}
