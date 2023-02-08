@@ -27,7 +27,7 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Push containers to registry
-      uses: ./.github/workflows/push-containers.yml
+      uses: ./.github/actions/push-containers
 
     - name: Read docker-compose.yml
       id: compose_contents
@@ -37,14 +37,14 @@ jobs:
 
     - if: github.event.inputs.target == 'mikr.us'
       name: Deploy to mikr.us
-      uses: ./.github/workflows/deploy-mikrus.yml
+      uses: ./.github/actions/deploy-mikrus
       with:
         delete_volume: ${{ github.event.inputs.delete_volume }}
         compose_contents: ${{ github.steps.compose_contents.content }}
 
     - if: github.event.inputs.target == 'Azure VM'
       name: Deploy to Azure
-      uses: ./.github/workflows/deploy-azure.yml
+      uses: ./.github/actions/deploy-azure
       with:
         delete_volume: ${{ github.event.inputs.delete_volume }}
         compose_contents: ${{ github.steps.compose_contents.content }}
