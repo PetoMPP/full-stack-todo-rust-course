@@ -1,0 +1,121 @@
+on:
+  workflow_call:
+    inputs:
+      compose_contents:
+        type: string
+        required: true
+        default: ''
+
+      delete_volume:
+        description: 'Delete database volume'
+        type: boolean
+        required: true
+        default: false
+
+      registry_name:
+        type: string
+        required: true
+        
+      username:
+        type: string
+        required: true
+        
+      password:
+        type: string
+        required: true
+        
+      db_username:
+        type: string
+        required: true
+        
+      db_password:
+        type: string
+        required: true
+
+      db_mode:
+        type: string
+        required: true
+
+      jwt_secret:
+        type: string
+        required: true
+
+      ssh_host:
+        type: string
+        required: true
+
+      ssh_port:
+        type: string
+        required: true
+
+      ssh_user:
+        type: string
+        required: true
+
+      ssh_key:
+        type: string
+        required: true
+
+  
+env:
+  clean: |
+    docker stop $(docker ps -a -q)
+    docker rm $(docker ps -a -q)
+    docker image rm $(docker images -a -q)
+    docker ps
+
+  delete_volume: |
+    docker volume rm ${{ github.event.repository.name }}_db-data
+    docker ps
+
+  compose: |
+    cd ~/deploy/${{ github.event.repository.name }}
+    docker login -u ${{ github.event.inputs.username }} -p ${{ github.event.inputs.password }} ${{ github.event.inputs.registry_name }}
+    rm -f .env
+    echo "DB_USER=${{ github.event.inputs.db_username }}" >> .env
+    echo "DB_PASSWORD=${{ github.event.inputs.db_password }}" >> .env
+    echo "DB_MODE=${{ github.event.inputs.db_mode }}" >> .env
+    echo "JWT_SECRET=${{ github.event.inputs.jwt_secret }}" >> .env
+    echo "ASPNET_IMAGE=${{ github.event.inputs.registry_name }}/${{ github.event.inputs.username }}/TodoAPI_ASPNET" >> .env
+    echo "YEW_IMAGE=${{ github.event.inputs.registry_name }}/${{ github.event.inputs.username }}/TodoUI_YEW" >> .env
+    rm -f docker-compose.yml
+    echo "${{ github.event.inputs.compose_contents }}" >> docker-compose.yml
+    docker compose --profile postgres --profile dotnet-aspnet --profile rust-yew up --remove-orphans
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - name: Clean docker
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ github.event.inputs.ssh_host }}
+        port: ${{ github.event.inputs.ssh_port }}
+        username: ${{ github.event.inputs.ssh_user }}
+        key: ${{ github.event.inputs.ssh_key }}
+        script: ${{ env.clean }}
+        command_timeout: 30m
+
+    - if: github.event.inputs.delete_volume == 'true'
+      name: Delete database volume
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ github.event.inputs.ssh_host }}
+        port: ${{ github.event.inputs.ssh_port }}
+        username: ${{ github.event.inputs.ssh_user }}
+        key: ${{ github.event.inputs.ssh_key }}
+        script: ${{ env.delete_volume }}
+        command_timeout: 30m
+
+    - name: Compose
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ github.event.inputs.ssh_host }}
+        port: ${{ github.event.inputs.ssh_port }}
+        username: ${{ github.event.inputs.ssh_user }}
+        key: ${{ github.event.inputs.ssh_key }}
+        script: ${{ env.compose }}
+        command_timeout: 30m
+        

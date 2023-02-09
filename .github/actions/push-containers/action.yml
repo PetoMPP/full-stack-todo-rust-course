@@ -2,24 +2,32 @@ name: 'Build and push containers'
 
 on:
   workflow_call:
+    inputs:
+      registry_name:
+        type: string
+        required: true
+        
+      username:
+        type: string
+        required: true
+        
+      password:
+        type: string
+        required: true
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-
-    env:
-      aspnet_image_name: ${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoAPI_ASPNET
-      yew_image_name: ${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoUI_YEW
-
+    
     strategy:
       fail-fast: false
 
       matrix:
         include:
           - dockerfile: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC/Dockerfile
-            image: ${{ jobs.docker.env.aspnet_image_name }}
+            image: ${{ inputs.registry_name }}/${{ inputs.username }}/TodoAPI_ASPNET
           - dockerfile: ./frontend/rust/yew/Dockerfile
-            image: ${{ jobs.docker.env.yew_image_name }}
+            image: ${{ inputs.registry_name }}/${{ inputs.username }}/TodoUI_YEW
 
     steps:
       - name: Checkout
@@ -34,9 +42,9 @@ jobs:
       - name: Login to Azure container registry
         uses: docker/login-action@v2
         with:
-          registry: ${{ secrets.AZ_REGISTRY_NAME }}
-          username: ${{ secrets.AZ_USERNAME }}
-          password: ${{ secrets.AZ_PASSWORD }}
+          registry: ${{ inputs.registry_name }}
+          username: ${{ inputs.username }}
+          password: ${{ inputs.password }}
           
       - name: Extract metadata (tags, labels) for Docker
         id: meta

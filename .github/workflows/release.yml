@@ -28,6 +28,10 @@ jobs:
 
     - name: Push containers to registry
       uses: ./.github/actions/push-containers
+      with:
+        registry_name: ${{ secrets.AZ_REGISTRY_NAME }}
+        username: ${{ secrets.AZ_USERNAME }}
+        password: ${{ secrets.AZ_PASSWORD }}
 
     - name: Read docker-compose.yml
       id: compose_contents
@@ -37,14 +41,36 @@ jobs:
 
     - if: github.event.inputs.target == 'mikr.us'
       name: Deploy to mikr.us
-      uses: ./.github/actions/deploy-mikrus
+      uses: ./.github/actions/deploy
       with:
         delete_volume: ${{ github.event.inputs.delete_volume }}
         compose_contents: ${{ github.steps.compose_contents.content }}
+        registry_name: ${{ secrets.AZ_REGISTRY_NAME }}
+        username: ${{ secrets.AZ_USERNAME }}
+        password: ${{ secrets.AZ_PASSWORD }}
+        db_username: ${{ secrets.DB_USER }}
+        db_password: ${{ secrets.DB_PASSWORD }}
+        db_mode: ${{ secrets.DB_MODE }}
+        jwt_secret: ${{ secrets.JWT_SECRET }}
+        ssh_host: ${{ secrets.SSH_HOST }}
+        ssh_port: ${{ secrets.SSH_PORT }}
+        ssh_user: ${{ secrets.SSH_USER }}
+        ssh_key: ${{ secrets.SSH_KEY }}
 
     - if: github.event.inputs.target == 'Azure VM'
       name: Deploy to Azure
-      uses: ./.github/actions/deploy-azure
+      uses: ./.github/actions/deploy
       with:
         delete_volume: ${{ github.event.inputs.delete_volume }}
         compose_contents: ${{ github.steps.compose_contents.content }}
+        registry_name: ${{ secrets.AZ_REGISTRY_NAME }}
+        username: ${{ secrets.AZ_USERNAME }}
+        password: ${{ secrets.AZ_PASSWORD }}
+        db_username: ${{ secrets.DB_USER }}
+        db_password: ${{ secrets.DB_PASSWORD }}
+        db_mode: ${{ secrets.DB_MODE }}
+        jwt_secret: ${{ secrets.JWT_SECRET }}
+        ssh_host: ${{ secrets.AZ_SSH_HOST }}
+        ssh_port: ${{ secrets.AZ_SSH_PORT }}
+        ssh_user: ${{ secrets.AZ_SSH_USER }}
+        ssh_key: ${{ secrets.AZ_SSH_KEY }}
