@@ -1,25 +1,15 @@
 name: 'Build and push containers'
 
 on:
-  workflow_call:
+  workflow_dispatch:
+
+env:
+  aspnet_image_name: ${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoAPI_ASPNET
+  yew_image_name: ${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoUI_YEW
 
 jobs:
   docker:
     runs-on: ubuntu-latest
-
-    env:
-      aspnet_image_name: ${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoAPI_ASPNET
-      yew_image_name: ${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoUI_YEW
-
-    strategy:
-      fail-fast: false
-
-      matrix:
-        include:
-          - dockerfile: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC/Dockerfile
-            image: ${{ jobs.docker.env.aspnet_image_name }}
-          - dockerfile: ./frontend/rust/yew/Dockerfile
-            image: ${{ jobs.docker.env.yew_image_name }}
 
     steps:
       - name: Checkout
@@ -38,17 +28,30 @@ jobs:
           username: ${{ secrets.AZ_USERNAME }}
           password: ${{ secrets.AZ_PASSWORD }}
           
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
+      - name: Extract metadata (tags, labels) for ASP.NET
+        id: asp_meta
         uses: docker/metadata-action@v4
         with:
-          images: ${{ matrix.image }}
+          images: ${{ env.aspnet_image_name }}
 
-      - name: Build and push
+      - name: Build and push ASP.NET
         uses: docker/build-push-action@v4
         with:
-          context: .
-          file: ${{ matrix.dockerfile }}
+          context: ./backend/dotnet/ASP.NET_MVC/TodoAPI_MVC/
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
+          tags: ${{ steps.asp_meta.outputs.tags }}
+          labels: ${{ steps.asp_meta.outputs.labels }}
+          
+      - name: Extract metadata (tags, labels) for Yew.rs
+        id: yew_meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.yew_image_name }}
+
+      - name: Build and push Yew.rs
+        uses: docker/build-push-action@v4
+        with:
+          context: ./frontend/rust/yew/
+          push: true
+          tags: ${{ steps.yew_meta.outputs.tags }}
+          labels: ${{ steps.yew_meta.outputs.labels }}

@@ -1,48 +1,27 @@
 on:
-  workflow_call:
+  workflow_dispatch:
     inputs:
-      compose_contents:
-        type: string
-        required: true
-        default: ''
-
       delete_volume:
         description: 'Delete database volume'
         type: boolean
         required: true
         default: false
   
-env:
-  clean: |
-    docker stop $(docker ps -a -q)
-    docker rm $(docker ps -a -q)
-    docker image rm $(docker images -a -q)
-    docker ps
-
-  delete_volume: |
-    docker volume rm ${{ github.event.repository.name }}_db-data
-    docker ps
-
-  compose: |
-    cd ~/deploy/${{ github.event.repository.name }}
-    docker login -u ${{ secrets.AZ_USERNAME }} -p ${{ secrets.AZ_PASSWORD }} ${{ secrets.AZ_REGISTRY_NAME }}
-    rm -f .env
-    echo "DB_USER=${{ secrets.DB_USER }}" >> .env
-    echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
-    echo "DB_MODE=${{ secrets.DB_MODE }}" >> .env
-    echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
-    echo "ASPNET_IMAGE=${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoAPI_ASPNET" >> .env
-    echo "YEW_IMAGE=${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoUI_YEW" >> .env
-    rm -f docker-compose.yml
-    echo "${{ github.event.inputs.compose_contents }}" >> docker-compose.yml
-    docker compose --profile postgres --profile dotnet-aspnet --profile rust-yew up --remove-orphans
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     timeout-minutes: 30
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+
+    - name: Read docker-compose.yml
+      id: compose_contents
+      uses: juliangruber/read-file-action@v1
+      with:
+        path: ./docker-compose.yml
+
     - name: Clean docker
       uses: appleboy/ssh-action@master
       with:
@@ -50,7 +29,11 @@ jobs:
         port: ${{ secrets.AZ_SSH_PORT }}
         username: ${{ secrets.AZ_SSH_USER }}
         key: ${{ secrets.AZ_SSH_KEY }}
-        script: ${{ env.clean }}
+        script: |
+          docker stop $(docker ps -a -q)
+          docker rm $(docker ps -a -q)
+          docker image rm $(docker images -a -q)
+          docker ps
         command_timeout: 30m
 
     - if: github.event.inputs.delete_volume == 'true'
@@ -61,7 +44,9 @@ jobs:
         port: ${{ secrets.AZ_SSH_PORT }}
         username: ${{ secrets.AZ_SSH_USER }}
         key: ${{ secrets.AZ_SSH_KEY }}
-        script: ${{ env.delete_volume }}
+        script: |
+          docker volume rm ${{ github.event.repository.name }}_db-data
+          docker ps
         command_timeout: 30m
 
     - name: Compose
@@ -71,6 +56,18 @@ jobs:
         port: ${{ secrets.AZ_SSH_PORT }}
         username: ${{ secrets.AZ_SSH_USER }}
         key: ${{ secrets.AZ_SSH_KEY }}
-        script: ${{ env.compose }}
+        script: |
+          cd ~/deploy/${{ github.event.repository.name }}
+          docker login -u ${{ secrets.AZ_USERNAME }} -p ${{ secrets.AZ_PASSWORD }} ${{ secrets.AZ_REGISTRY_NAME }}
+          rm -f .env
+          echo "DB_USER=${{ secrets.DB_USER }}" >> .env
+          echo "DB_PASSWORD=${{ secrets.DB_PASSWORD }}" >> .env
+          echo "DB_MODE=${{ secrets.DB_MODE }}" >> .env
+          echo "JWT_SECRET=${{ secrets.JWT_SECRET }}" >> .env
+          echo "ASPNET_IMAGE=${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoAPI_ASPNET" >> .env
+          echo "YEW_IMAGE=${{ secrets.AZ_REGISTRY_NAME }}/${{ secrets.AZ_USERNAME }}/TodoUI_YEW" >> .env
+          rm -f docker-compose.yml
+          echo "${{ github.steps.compose_contents.content }}" >> docker-compose.yml
+          docker compose --profile postgres --profile dotnet-aspnet --profile rust-yew up --remove-orphans
         command_timeout: 30m
         
